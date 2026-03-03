@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Flutter-Ready Menu Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8B5E3C",
+                        "secondary": "#F3E9DC",
+                        "ios-bg": "#F2F2F7",
+                        "ios-card": "#FFFFFF",
+                        "ios-blue": "#007AFF"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "ios": "10px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-ios-bg font-display text-slate-900;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }.switch-adaptive {
+            @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200;
+        }
+        .switch-adaptive-thumb {
+            @apply inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200 shadow-md;
+        }
+        input:checked + .switch-adaptive {
+            @apply bg-[#34C759];
+        }
+        input:checked + .switch-adaptive .switch-adaptive-thumb {
+            @apply translate-x-5;
+        }
+        input:not(:checked) + .switch-adaptive {
+            @apply bg-slate-200;
+        }.dismissible-action-left {
+            @apply absolute inset-y-0 left-0 w-20 bg-blue-500 text-white flex items-center justify-center;
+        }
+        .dismissible-action-right {
+            @apply absolute inset-y-0 right-0 w-20 bg-red-500 text-white flex items-center justify-center;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen">
+<header class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200">
+<div class="px-4 pt-2 pb-3">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1">
+<button class="p-2 -ml-2 text-ios-blue">
+<span class="material-symbols-outlined text-[28px]">chevron_left</span>
+</button>
+<h1 class="text-lg font-semibold">Menu Manager</h1>
+</div>
+<button class="text-ios-blue font-medium">Add</button>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+</div>
+<input class="block w-full pl-9 pr-4 py-1.5 bg-slate-100 border-none rounded-lg text-sm placeholder-slate-500 focus:ring-2 focus:ring-ios-blue/20 transition-all" placeholder="Search menu items..." type="text"/>
+</div>
+</div>
+</header>
+<main class="pb-32">
+<div class="flex gap-2 px-4 py-4 overflow-x-auto hide-scrollbar bg-white">
+<button class="flex h-8 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-white text-[13px] font-semibold">
+            All Items
+        </button>
+<button class="flex h-8 shrink-0 items-center justify-center rounded-full bg-slate-100 px-4 text-slate-600 text-[13px] font-medium">
+            Espresso
+        </button>
+<button class="flex h-8 shrink-0 items-center justify-center rounded-full bg-slate-100 px-4 text-slate-600 text-[13px] font-medium">
+            Pastries
+        </button>
+<button class="flex h-8 shrink-0 items-center justify-center rounded-full bg-slate-100 px-4 text-slate-600 text-[13px] font-medium">
+            Non-Coffee
+        </button>
+</div>
+<div class="mt-4 flex flex-col">
+<p class="px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Inventory (12 Items)</p>
+<div class="relative overflow-hidden bg-white group border-b border-slate-100">
+<div class="absolute inset-0 flex justify-between pointer-events-none">
+<div class="bg-ios-blue w-20 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">edit</span>
+<span class="text-[10px]">Edit</span>
+</div>
+<div class="bg-red-500 w-20 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">delete</span>
+<span class="text-[10px]">Delete</span>
+</div>
+</div>
+<div class="relative bg-white flex items-center px-4 py-3 gap-4 group-hover:translate-x-0 transition-transform">
+<div class="relative flex-shrink-0">
+<div class="size-14 rounded-lg bg-cover bg-center border border-slate-100" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDYA1LMMHMrD5TY0Am81XuwohiFC1Nvw5-CfLvNc-0jf7-Tt8YQRBGSUzqOa4cjcpiU2TVr2EBjM-UgE7SLELuMyz4azRVgBr8JjXtzkxn76xQTUE4GEA4nrfTqfgTwu3m9-s8-TJREn-Mcvceg1fxdFXYTQG7F7OkoPlwY9hHnQlKr9rAlAcuBIIEs0bHSyOIeaIUmdg0mU8TfYA5jmZSEl2CdsM3jx3af2z8FW6PmaycLlW1FfwJDXM_-AhExnfc4jxk8s6ejKiQ");'></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<h4 class="font-semibold text-[15px] truncate">Caramel Macchiato</h4>
+<span class="px-1.5 py-0.5 rounded-full bg-orange-100 text-[9px] font-bold text-orange-700 uppercase">Popular</span>
+</div>
+<p class="text-[12px] text-slate-500 truncate">Cat: Espresso • SKU: CM-001</p>
+<p class="text-[14px] font-bold text-primary mt-0.5">$4.50</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<label class="flex items-center cursor-pointer">
+<input checked="" class="sr-only" type="checkbox"/>
+<div class="switch-adaptive">
+<span class="switch-adaptive-thumb"></span>
+</div>
+</label>
+<div class="flex gap-4">
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white border-b border-slate-100 flex items-center px-4 py-3 gap-4">
+<div class="size-14 rounded-lg bg-cover bg-center border border-slate-100 flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDPwp1qusBfMJL3IiRmi0CLl2RrnHzdsjY6b7F90HCYjIuu52Ir6SO6l0h6GIzD0KFbLIomZuVqqngzKAuD5HMfoua10RgRo11LeGHDc0wvBB2K0d8oa7-vT-D6OHtFKI3EdJrRbmOb_eG0cHw3mTFxPK6zhAOm-rUeo7ss0aOXxrP3mt_5orDwcioBdne7WRqLNjfBaqa2Z5XkLx0tZv-O7xc-Y5p4oC9H7ZDzUy4Zke7YN6rDGJx6osLTf26Hmh6KE60Jc8YxLWg");'></div>
+<div class="flex-1 min-w-0">
+<h4 class="font-semibold text-[15px] truncate">Almond Croissant</h4>
+<p class="text-[12px] text-slate-500">Cat: Pastries • SKU: AC-204</p>
+<p class="text-[14px] font-bold text-primary mt-0.5">$3.75</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<label class="flex items-center cursor-pointer">
+<input checked="" class="sr-only" type="checkbox"/>
+<div class="switch-adaptive">
+<span class="switch-adaptive-thumb"></span>
+</div>
+</label>
+<div class="flex gap-4">
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-white border-b border-slate-100 flex items-center px-4 py-3 gap-4">
+<div class="relative size-14 rounded-lg bg-cover bg-center border border-slate-100 flex-shrink-0 opacity-50" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD7teBJ_tAFp0k5vsabxFKwcKXwssmnSyYrQGwzkEUoUnear9UAmyslvQh7SBNi--nRZ1EfnJAGRG_EiTt80KdS1cyfCnKcmQIh7v72EEm_t8rNDySsfJ_fCldBl87fd2btMb5MdDZEqBT8MiCYE_Fu1JbG8IOgUw91pWf2Vtcqx1lLSiEOX1iMMzd0N_frBiwRCzk_NLkTTMEmeRznIPZMZqqGnWckgHVN6cDtToyX97BQCSrBxGl2wCwcow26g890DNs-6KJxbMY");'>
+<div class="absolute inset-0 bg-white/20"></div>
+</div>
+<div class="flex-1 min-w-0 opacity-60">
+<h4 class="font-semibold text-[15px] truncate">Nitro Cold Brew</h4>
+<p class="text-[12px] text-slate-500">Cat: Cold Brew • SKU: NB-082</p>
+<p class="text-[14px] font-bold text-slate-400 mt-0.5">$5.25 <span class="ml-1 text-[10px] text-red-500 uppercase">Out of Stock</span></p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<label class="flex items-center cursor-pointer">
+<input class="sr-only" type="checkbox"/>
+<div class="switch-adaptive">
+<span class="switch-adaptive-thumb"></span>
+</div>
+</label>
+<div class="flex gap-4">
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<div class="bg-white border-b border-slate-100 flex items-center px-4 py-3 gap-4">
+<div class="size-14 rounded-lg bg-cover bg-center border border-slate-100 flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBuQux_gkM--Xc9eWgxvYkHlkP3V5rFit1zO4JA1rv4uQXfrI3h9Df2p5b_UJQ0gay4Dnermyj96JUZDn2F_F2nXO-EW25jS-g5-ulc7ub7fJx-esALxmFZgiveviAKtpUQt-MDexFQhBgXPGdjkKIHFq6KBJDFwZaFeMjlJTr7P8KyVJnbnvCVcFV3w-pGKOL3fsP8ZpPBeKgggN1agj70aMwwFUanpaJkmx8IJ5nZxv1l7jb_7mzHWV9P7GegeitD-OxsxR7J0Gk");'></div>
+<div class="flex-1 min-w-0">
+<h4 class="font-semibold text-[15px] truncate">Pumpkin Spice Latte</h4>
+<p class="text-[12px] text-slate-500">Cat: Seasonal • SKU: PSL-77</p>
+<p class="text-[14px] font-bold text-primary mt-0.5">$5.50</p>
+</div>
+<div class="flex flex-col items-end gap-3">
+<label class="flex items-center cursor-pointer">
+<input checked="" class="sr-only" type="checkbox"/>
+<div class="switch-adaptive">
+<span class="switch-adaptive-thumb"></span>
+</div>
+</label>
+<div class="flex gap-4">
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1 text-slate-400">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<button class="fixed bottom-24 right-6 size-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center active:opacity-80 transition-opacity z-50">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<nav class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-xl border-t border-slate-200 px-6 pt-2 pb-8 flex justify-between items-center z-40">
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-ios-blue">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="text-[10px] font-semibold">Inventory</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-[10px] font-medium">Orders</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</nav>
+<div class="fixed bottom-0 inset-x-0 h-1 flex justify-center pb-2 pointer-events-none z-50">
+<div class="w-32 h-1 bg-slate-300 rounded-full"></div>
+</div>
+
+</body></html>
