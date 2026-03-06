@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Flutter-Ready Table Map</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6B4E31", // Coffee Brown
+                        "accent": "#D2B48C",
+                        "ios-bg": "#F2F2F7",
+                        "status-available-bg": "#E8F5E9",
+                        "status-available-text": "#2E7D32",
+                        "status-occupied-bg": "#FFEBEE",
+                        "status-occupied-text": "#C62828",
+                        "status-pending-bg": "#FFF3E0",
+                        "status-pending-text": "#EF6C00",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "ios": "12px",
+                        "ios-lg": "16px"
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-ios-bg text-gray-900 font-display antialiased;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }.grid-view-builder {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }.gesture-detector {
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out;
+        }
+        .gesture-detector:active {
+            transform: scale(0.96);
+        }.ios-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body>
+<div class="flex flex-col min-h-screen max-w-[430px] mx-auto bg-ios-bg shadow-2xl relative">
+<header class="ios-blur sticky top-0 z-50 border-b border-gray-200">
+<div class="flex items-center justify-between h-[64px] px-4">
+<div class="flex items-center gap-1">
+<button class="p-2 -ml-2 rounded-full hover:bg-black/5">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<h1 class="text-[20px] font-semibold tracking-tight">Table Map</h1>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded-full hover:bg-black/5">
+<span class="material-symbols-outlined text-[24px]">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-black/5 relative">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+</div>
+</div>
+<div class="flex gap-6 px-6 overflow-x-auto no-scrollbar border-t border-gray-100">
+<button class="py-3 border-b-2 border-primary text-primary font-bold text-sm whitespace-nowrap">Main Floor</button>
+<button class="py-3 border-b-2 border-transparent text-gray-400 font-bold text-sm whitespace-nowrap">Terrace</button>
+<button class="py-3 border-b-2 border-transparent text-gray-400 font-bold text-sm whitespace-nowrap">VIP Lounge</button>
+<button class="py-3 border-b-2 border-transparent text-gray-400 font-bold text-sm whitespace-nowrap">Bar Area</button>
+</div>
+</header>
+<main class="flex-1 pb-32">
+<div class="px-4 pt-4 flex gap-2 overflow-x-auto no-scrollbar">
+<div class="bg-white px-3 py-2 rounded-ios border border-gray-200 flex items-center gap-2 shrink-0">
+<div class="w-2.5 h-2.5 rounded-full bg-status-available-text"></div>
+<span class="text-[11px] font-bold text-gray-500">AVAILABLE: 12</span>
+</div>
+<div class="bg-white px-3 py-2 rounded-ios border border-gray-200 flex items-center gap-2 shrink-0">
+<div class="w-2.5 h-2.5 rounded-full bg-status-occupied-text"></div>
+<span class="text-[11px] font-bold text-gray-500">OCCUPIED: 05</span>
+</div>
+<div class="bg-white px-3 py-2 rounded-ios border border-gray-200 flex items-center gap-2 shrink-0">
+<div class="w-2.5 h-2.5 rounded-full bg-status-pending-text"></div>
+<span class="text-[11px] font-bold text-gray-500">BILL: 03</span>
+</div>
+</div>
+<div class="grid-view-builder">
+<div class="gesture-detector">
+<div class="bg-status-available-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-available-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-available-text">T-01</span>
+<span class="material-symbols-outlined text-status-available-text/60">groups</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-available-text tracking-wider uppercase">Available</p>
+<p class="text-xs text-status-available-text/70">4 Seats</p>
+</div>
+</div>
+</div>
+<div class="gesture-detector">
+<div class="bg-status-occupied-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-occupied-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-occupied-text">T-02</span>
+<span class="material-symbols-outlined text-status-occupied-text/60">restaurant</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-occupied-text tracking-wider uppercase">Occupied</p>
+<p class="text-xs text-status-occupied-text/70">Order #442 • $42.00</p>
+</div>
+</div>
+</div>
+<div class="gesture-detector">
+<div class="bg-status-pending-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-pending-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-pending-text">T-03</span>
+<span class="material-symbols-outlined text-status-pending-text/60">payments</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-pending-text tracking-wider uppercase">Pending Bill</p>
+<p class="text-xs text-status-pending-text/70">5 min waiting</p>
+</div>
+</div>
+</div>
+<div class="gesture-detector">
+<div class="bg-status-available-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-available-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-available-text">T-04</span>
+<span class="material-symbols-outlined text-status-available-text/60">groups</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-available-text tracking-wider uppercase">Available</p>
+<p class="text-xs text-status-available-text/70">2 Seats</p>
+</div>
+</div>
+</div>
+<div class="gesture-detector">
+<div class="bg-status-occupied-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-occupied-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-occupied-text">T-05</span>
+<span class="material-symbols-outlined text-status-occupied-text/60">restaurant</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-occupied-text tracking-wider uppercase">Occupied</p>
+<p class="text-xs text-status-occupied-text/70">Order #445 • $18.50</p>
+</div>
+</div>
+</div>
+<div class="gesture-detector">
+<div class="bg-status-available-bg rounded-ios-lg p-4 h-32 flex flex-col justify-between border border-status-available-text/10 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="text-lg font-bold text-status-available-text">T-06</span>
+<span class="material-symbols-outlined text-status-available-text/60">groups</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-status-available-text tracking-wider uppercase">Available</p>
+<p class="text-xs text-status-available-text/70">6 Seats</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed bottom-24 right-6">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center gesture-detector">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+</div>
+<nav class="ios-blur fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto border-t border-gray-200 px-6 py-2 flex justify-between items-center z-50">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined fill-[1]">grid_view</span>
+<span class="text-[10px] font-medium">Tables</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-[10px] font-medium">Orders</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">coffee</span>
+<span class="text-[10px] font-medium">Menu</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-400">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</nav>
+</div>
+
+</body></html>
