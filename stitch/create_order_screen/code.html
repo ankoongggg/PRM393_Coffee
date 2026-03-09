@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Order Screen - Coffee Shop Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#d47311",
+                        "background-light": "#fdfcfb",
+                        "background-dark": "#121212",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e1e1e",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "ios": "12px",
+                        "xl": "16px",
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }.sliver-app-bar {
+            @apply sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md;
+        }.tab-active {
+            @apply border-b-2 border-primary text-primary;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<div class="flex-1 flex flex-col w-full max-w-[430px] mx-auto relative shadow-2xl bg-background-light dark:bg-background-dark min-h-screen">
+<header class="sliver-app-bar border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center justify-between px-4 h-14">
+<button class="w-10 h-10 flex items-center justify-start text-slate-700 dark:text-slate-300">
+<span class="material-symbols-outlined text-[24px]">arrow_back_ios</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Create Order</h1>
+<button class="w-10 h-10 flex items-center justify-end text-slate-700 dark:text-slate-300">
+<span class="material-symbols-outlined text-[24px]">history</span>
+</button>
+</div>
+<div class="px-4 pb-3">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-[20px]">search</span>
+<input class="w-full h-11 pl-10 pr-4 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Tìm kiếm món ăn..." type="text"/>
+</div>
+</div>
+<nav class="flex px-2 overflow-x-auto no-scrollbar gap-1">
+<button class="px-5 py-3 text-sm font-semibold whitespace-nowrap tab-active">Tất cả</button>
+<button class="px-5 py-3 text-sm font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-primary">Cà phê</button>
+<button class="px-5 py-3 text-sm font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-primary">Trà</button>
+<button class="px-5 py-3 text-sm font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-primary">Bánh</button>
+<button class="px-5 py-3 text-sm font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 border-b-2 border-transparent hover:text-primary">Nước ép</button>
+</nav>
+</header>
+<main class="flex-1 p-4 pb-32">
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="relative aspect-square">
+<img alt="Espresso" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR2gnXe_oP5GBVyk3nvURXAPKgEoMu8AFDAF-OH1XII8PZ6jo34FcOqMKkNsFJ57v3Ai8aGEzNhP0Dk85jFX8Taa_MOvfdqnPKauvIzN63Ae7SO62oWGivo5mp_6JfzVQCJeBS2_ORta4JYFXRQnXnZOKFnLvKJ_R6JuQN0dxKaLJ2EznisGJ28er0snz-AaVBQLktWoLHyyI_xbRVj80h6RPe7-cs9v7fMQOfUcvye2fm5ordX5cjv4-hXZX2QILPf8D9hAPTSFM"/>
+<button class="absolute top-2 right-2 size-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight">Espresso</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">45.000đ</span>
+<button class="size-8 bg-primary/10 text-primary rounded-full flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border-2 border-primary relative">
+<div class="relative aspect-square">
+<img alt="Cà phê sữa" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx81mF9mpdcfUN6wTif6cXaCs6wa10hvqfFIoacItehe0h_-2mJ_d5dQiLzNOz0zy0N1t-gKskoKe1FDxd0BAs3hANzR1mjyf9fDueYKx2q7hjAkbq-q5uRs3pftQFId8qdG2qg5mSvU94vXB7WjuKt8LrBxlGD1heftGt4di981pN_xMZSWhJGGVZwMQV6n9yXiJC9cCR940CbigeZ5XmZswsok5iWxba0fTRWuid8yRd22B7dh0ho_aGU4-Re_XLO0BDYRasBaY"/>
+<div class="absolute inset-0 bg-primary/10"></div>
+<div class="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2x</div>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight">Cà phê sữa</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">55.000đ</span>
+<button class="size-8 bg-primary text-white rounded-full flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="relative aspect-square">
+<img alt="Trà đào cam sả" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBVIlO92tB3O2BeRo1vqz72ICSGdT4IDy6r2Do1gkUlmeXorQWaSC15dFHceod625S-f1VuZRZ_uchgB33lZX59elOuesjbz1F1j3fEWknLKP9nuyLW9wrEZDiQDXy9RwPp3gu2rEKhhmQTZhv4pcIEKjwHzWDNlJww3Xg54EehdNZCp63DXwwhaS1HAzL5W_H93CX9yaYIefHSFYXqD-_Ha9ZeOGdxN1RYb4qvyDhPk2Wx9gh_dZ5BClFbGeD0vUHvkTt_jEvLLs"/>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight truncate">Trà đào cam sả</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">65.000đ</span>
+<button class="size-8 bg-primary/10 text-primary rounded-full flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="relative aspect-square">
+<img alt="Bánh Tiramisu" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkrZzURAjg8_Uhg2TN7ZrmojVwjPeCdl3wrTs4sEEk1UDxDgtMq-Q1Tr-dqezRAGrbExB5KAQmQ1aWabZ009KanCSpA700Ip-m0TmQ8YXKnmzWcCScXGanNErO5_HzHbAeHp2UIJKvkqEdYNkU0GzJdKDfSjEa5BEcCC8Yjsx3DSudfQFnk1EyBbARWzg-CHmMShYx1uVsJMP2Y2J6o3g10paB4-bsR3DTDw6wiS5gZqvnaXy-jbtPr1d8dnfFCDStwp3HRZFLPbo"/>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight">Bánh Tiramisu</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">75.000đ</span>
+<button class="size-8 bg-primary/10 text-primary rounded-full flex items-center justify-center active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="relative aspect-square">
+<img alt="Cold Brew" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpDRTc6biSEkhU6djATW2PzgKx7LzktKJhhtNFYvbFXaRk4b_A_KGXEIeipLlW8MsB_5MpBmpfhHbw8TY56udmKCMBYOyJXQC0RSdgsNbGDOUSet_kRpBpP4DYk6E5hYKERxztp1OUqNFBjvkvQ-vwC5zqOTmN5JXbwd_KpXHgD8CRTQo2fAyYe3u1QFCUUJEN3JFoZ_8r-zTeQxX7Ff2XWzzXXivn8i5mNYfvQ8Vw7TXBaP0lc2oZeDlDEAVebZEe_5R1P8_Zf1g"/>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight">Cold Brew</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">60.000đ</span>
+<button class="size-8 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="relative aspect-square">
+<img alt="Bánh Macaron" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo5GpMe9P3jFA6lhdXEtHpasYeoj90TXHAyv099q_DkqE5LXz8G0u4gb-Jeq4KZUAVxQgufBMgFdjJq7dc2YY9kD4HhXsY_ZVd20YubrMii8Vdpa58MAng4fkg7_RtBSqvuEjKinSEXmGPVMdB1dy35EzGTKeLDjwVJpKNvXq0FVq0m1lgKItigr_Y_ODdiQkgbE3WQ56Ze8fVWs40kDHu-xfhiCD9QS8NXEUe4cTDNOe12eIHBCDnI2WTWA1_132cnpOh9-WDXYA"/>
+</div>
+<div class="p-3 flex flex-col gap-1">
+<h3 class="text-sm font-bold leading-tight">Bánh Macaron</h3>
+<div class="flex items-center justify-between mt-1">
+<span class="text-primary font-bold text-sm">35.000đ</span>
+<button class="size-8 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-50">
+<div class="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 pb-8 pt-4 px-4 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">TỔNG CỘNG (2 MÓN)</span>
+<span class="text-2xl font-black text-slate-900 dark:text-white leading-none">110.000đ</span>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white h-12 px-8 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+<span>Xác nhận đơn</span>
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</footer>
+</div>
+
+</body></html>
