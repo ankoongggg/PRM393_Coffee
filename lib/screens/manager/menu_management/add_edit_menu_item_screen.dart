@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+import '../../../models/menu_item_model.dart';
+
+class AddEditMenuItemScreen extends StatefulWidget {
+  final MenuItemModel? menuItem;
+  const AddEditMenuItemScreen({super.key, this.menuItem});
+
+  @override
+  State<AddEditMenuItemScreen> createState() => _AddEditMenuItemScreenState();
+}
+
+class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _imageCtrl = TextEditingController();
+  String _selectedCategory = 'Espresso';
+  bool _isAvailable = true;
+
+  bool get _isEdit => widget.menuItem != null;
+
+  final List<String> _categories = ['Espresso', 'Latte', 'Cappuccino', 'Cold Brew', 'Frappe'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEdit) {
+      _nameCtrl.text = widget.menuItem!.name;
+      _descCtrl.text = widget.menuItem!.description;
+      _priceCtrl.text = widget.menuItem!.price.toStringAsFixed(0);
+      _imageCtrl.text = widget.menuItem!.imageUrl;
+      _selectedCategory = widget.menuItem!.category;
+      _isAvailable = widget.menuItem!.isAvailable;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _priceCtrl.dispose();
+    _imageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF6F1),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF6F4E37),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          _isEdit ? 'Chỉnh sửa món' : 'Thêm món mới',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: _submit,
+            icon: const Icon(Icons.check, color: Colors.white),
+            label: const Text('Lưu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildImagePreview(),
+              const SizedBox(height: 20),
+              _buildSection('Thông tin cơ bản', [
+                _buildTextField(_nameCtrl, 'Tên món', Icons.coffee, required: true),
+                const SizedBox(height: 14),
+                _buildTextField(_descCtrl, 'Mô tả', Icons.description_outlined, maxLines: 3),
+              ]),
+              const SizedBox(height: 16),
+              _buildSection('Giá & Danh mục', [
+                _buildTextField(
+                  _priceCtrl, 'Giá (VNĐ)', Icons.attach_money,
+                  required: true,
+                  keyboardType: TextInputType.number,
+                  suffix: 'đ',
+                ),
+                const SizedBox(height: 14),
+                _buildCategoryDropdown(),
+              ]),
+              const SizedBox(height: 16),
+              _buildSection('Ảnh', [
+                _buildTextField(_imageCtrl, 'URL ảnh', Icons.image_outlined),
+              ]),
+              const SizedBox(height: 16),
+              _buildAvailableToggle(),
+              const SizedBox(height: 28),
+              _buildSubmitButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return Center(
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5EDE0),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE8D5C0), width: 2),
+        ),
+        child: _imageCtrl.text.isNotEmpty
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.network(_imageCtrl.text, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.coffee, size: 40, color: Color(0xFF9C7B5A))),
+              )
+            : const Icon(Icons.add_a_photo, size: 36, color: Color(0xFF9C7B5A)),
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6F4E37))),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    bool required = false,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? suffix,
+  }) {
+    return TextFormField(
+      controller: ctrl,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: required ? (v) => (v == null || v.isEmpty) ? 'Không được để trống' : null : null,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: const Color(0xFF9C7B5A), size: 20),
+        suffixText: suffix,
+        filled: true,
+        fillColor: const Color(0xFFFAF6F1),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF6F4E37), width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedCategory,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF9C7B5A), size: 20),
+        hintText: 'Chọn danh mục',
+        filled: true,
+        fillColor: const Color(0xFFFAF6F1),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
+      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+      onChanged: (v) => setState(() => _selectedCategory = v!),
+    );
+  }
+
+  Widget _buildAvailableToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, color: Color(0xFF6F4E37)),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Trạng thái có sẵn', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text('Món sẽ hiển thị khi Waiter tạo order', style: TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
+              ],
+            ),
+          ),
+          Switch(
+            value: _isAvailable,
+            activeThumbColor: const Color(0xFF6F4E37),
+            onChanged: (v) => setState(() => _isAvailable = v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _submit,
+        icon: Icon(_isEdit ? Icons.save : Icons.add, color: Colors.white),
+        label: Text(
+          _isEdit ? 'Lưu thay đổi' : 'Thêm món mới',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6F4E37),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      // TODO: gọi MenuProvider.addMenuItem hoặc updateMenuItem
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isEdit ? 'Đã cập nhật món!' : 'Đã thêm món mới!'),
+          backgroundColor: const Color(0xFF6F4E37),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+}
+
