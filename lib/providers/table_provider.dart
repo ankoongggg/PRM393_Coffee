@@ -118,6 +118,22 @@ class TableProvider extends ChangeNotifier {
     }
   }
 
+  /// Đánh dấu bàn là "waiting" khi order đã gửi đến Barista (chờ phục vụ)
+  Future<void> setTableWaiting(String tableId, String orderId) async {
+    try {
+      await _firebaseService.updateTableStatus(
+        tableId,
+        'waiting',
+        currentOrderId: orderId,
+      );
+      print('✅ Bàn $tableId đánh dấu waiting');
+      await fetchTables();
+    } catch (e) {
+      _error = 'Lỗi cập nhật bàn: $e';
+      print('❌ $_error');
+    }
+  }
+
   /// Đánh dấu bàn là "available" khi hoàn thành đơn (Waiter)
   Future<void> setTableAvailable(String tableId) async {
     try {
@@ -127,21 +143,6 @@ class TableProvider extends ChangeNotifier {
         currentOrderId: null,
       );
       print('✅ Bàn $tableId trở lại available');
-      await fetchTables();
-    } catch (e) {
-      _error = 'Lỗi cập nhật bàn: $e';
-      print('❌ $_error');
-    }
-  }
-
-  /// Đánh dấu bàn là "reserved" (nếu có yêu cầu)
-  Future<void> setTableReserved(String tableId) async {
-    try {
-      await _firebaseService.updateTableStatus(
-        tableId,
-        'reserved',
-      );
-      print('✅ Bàn $tableId đánh dấu reserved');
       await fetchTables();
     } catch (e) {
       _error = 'Lỗi cập nhật bàn: $e';

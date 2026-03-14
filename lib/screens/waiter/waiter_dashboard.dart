@@ -46,13 +46,6 @@ class WaiterDashboard extends StatelessWidget {
                     color: const Color(0xFF2E7D32),
                     onTap: () => Navigator.pushNamed(context, AppRoutes.waiterTables),
                   ),
-                  _WaiterCard(
-                    icon: Icons.add_shopping_cart,
-                    title: 'Tạo Order',
-                    subtitle: 'Tạo đơn hàng mới',
-                    color: const Color(0xFF6F4E37),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.waiterTables),
-                  ),
                 ],
               ),
             ),
@@ -68,7 +61,7 @@ class _WaiterCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _WaiterCard({
     required this.icon,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/menu_provider.dart';
+import '../../../routes/app_routes.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String tableId;
@@ -140,13 +141,68 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Text('Tạo Order - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: Text(
+              'Tạo Order - Bàn ${widget.tableNumber}',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                      onPressed: () {
+                        if (_totalItems == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Giỏ hàng đang trống'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        } else {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.waiterCartDetail,
+                            arguments: {
+                              'tableId': widget.tableId,
+                              'tableNumber': widget.tableNumber,
+                              'cartItems': _cart,
+                            },
+                          );
+                        }
+                      },
+                    ),
+                    if (_totalItems > 0)
+                      Positioned(
+                        right: 4,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$_totalItems',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
       body: Column(
         children: [
           _buildCategoryFilter(categories),
           Expanded(child: _buildMenuGrid(menuProvider, filteredItems)),
-          if (_totalItems > 0) _buildCartBar(),
         ],
       ),
         );

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/table_provider.dart';
+import '../../../providers/order_provider.dart';
 import '../../waiter/order/create_order_screen.dart';
+import '../../waiter/order/order_detail_screen.dart';
+import '../../waiter/order/served_order_screen.dart';
 
 class TableListScreen extends StatefulWidget {
   const TableListScreen({super.key});
@@ -23,14 +26,14 @@ class _TableListScreenState extends State<TableListScreen> {
   Color _statusColor(String s) => switch (s) {
     'available' => const Color(0xFF27AE60),
     'occupied' => Colors.red,
-    'reserved' => const Color(0xFFE67E22),
+    'waiting' => const Color(0xFF0056B3),
     _ => Colors.grey,
   };
 
   String _statusLabel(String s) => switch (s) {
     'available' => 'Trống',
     'occupied' => 'Đang phục vụ',
-    'reserved' => 'Đã đặt trước',
+    'waiting' => 'Chờ phục vụ',
     _ => s,
   };
 
@@ -40,28 +43,58 @@ class _TableListScreenState extends State<TableListScreen> {
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => CreateOrderScreen(tableId: table['id'], tableNumber: table['number'] as int),
       ));
+    } else if (status == 'waiting') {
+      // Mở màn hình chi tiết order
+      final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+      final tableOrders = orderProvider.ordersByTable(table['id']);
+      
+      if (tableOrders.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không có order nào cho bàn này'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final order = tableOrders.first;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderDetailScreen(
+            order: order,
+            tableId: table['id'],
+            tableNumber: table['number'] as int,
+          ),
+        ),
+      );
     } else if (status == 'occupied') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Bàn ${table['number']} - Đơn: ${table['orderId'] ?? 'N/A'}'),
-          action: SnackBarAction(
-            label: 'Theo dõi',
-            onPressed: () => Navigator.pushNamed(context, '/waiter/order-tracking', arguments: table['orderId']),
+      // Mở màn hình chi tiết order đang phục vụ
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ServedOrderScreen(
+            tableId: table['id'],
+            tableNumber: table['number'] as int,
           ),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bàn ${table['number']} đã được đặt trước'), backgroundColor: const Color(0xFFE67E22)),
+        SnackBar(content: Text('Bàn ${table['number']} không khả dụng'), backgroundColor: Colors.orange),
       );
     }
   }
 
+  String _formatPrice(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+
   @override
   Widget build(BuildContext context) {
     // ✅ Dùng Consumer để lấy data từ TableProvider
-    return Consumer<TableProvider>(
-      builder: (context, tableProvider, child) {
+    return Consumer2<TableProvider, OrderProvider>(
+      builder: (context, tableProvider, orderProvider, child) {
         final tables = tableProvider.tables;
         final available = tables.where((t) => t.status.toString().split('.').last == 'available').length;
         final occupied = tables.where((t) => t.status.toString().split('.').last == 'occupied').length;
@@ -134,8 +167,9 @@ class _TableListScreenState extends State<TableListScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _LegendItem(color: const Color(0xFF27AE60), label: 'Trống ($available)'),
+          _LegendItem(color: const Color(0xFF0056B3), label: 'Chờ phục vụ'),
           _LegendItem(color: Colors.red, label: 'Đang phục vụ ($occupied)'),
-          _LegendItem(color: const Color(0xFFE67E22), label: 'Đã đặt'),
+          
         ],
       ),
     );

@@ -1,7 +1,7 @@
 enum TableStatus {
   available,   // Bàn trống
   occupied,    // Đang phục vụ
-  reserved;    // Đã đặt trước
+  waiting;     // Đang chờ phục vụ (order xong, chưa được phục vụ)
 
   String get displayName {
     switch (this) {
@@ -9,8 +9,8 @@ enum TableStatus {
         return 'Trống';
       case TableStatus.occupied:
         return 'Đang phục vụ';
-      case TableStatus.reserved:
-        return 'Đã đặt';
+      case TableStatus.waiting:
+        return 'Chờ phục vụ';
     }
   }
 }

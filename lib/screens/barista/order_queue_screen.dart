@@ -16,7 +16,7 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     
     // ✅ Fetch pending & preparing orders khi mở screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,6 +78,9 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
 
         final pendingOrders = orderProvider.pendingOrders;
         final preparingOrders = orderProvider.preparingOrders;
+        final completedOrders = orderProvider.orders
+            .where((o) => o.status == OrderStatus.completed)
+            .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFF0F4FF),
@@ -96,14 +99,16 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
               tabs: [
                 Tab(child: Text('⏳ Chờ (${pendingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
                 Tab(child: Text('🔄 Đang pha (${preparingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
+                Tab(child: Text('✅ Đã hoàn thành (${completedOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
               ],
             ),
           ),
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildOrderList(pendingOrders, true),
-              _buildOrderList(preparingOrders, false),
+              _buildOrderList(pendingOrders, 'pending'),
+              _buildOrderList(preparingOrders, 'preparing'),
+              _buildOrderList(completedOrders, 'completed'),
             ],
           ),
         );
@@ -111,16 +116,30 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildOrderList(List orders, bool isPending) {
+  Widget _buildOrderList(List orders, String status) {
+    String emptyText = 'Không có dữ liệu';
+    IconData emptyIcon = Icons.inbox;
+    
+    if (status == 'pending') {
+      emptyText = 'Không có đơn chờ';
+      emptyIcon = Icons.hourglass_empty;
+    } else if (status == 'preparing') {
+      emptyText = 'Không có đơn đang pha';
+      emptyIcon = Icons.local_cafe;
+    } else if (status == 'completed') {
+      emptyText = 'Không có đơn hoàn thành';
+      emptyIcon = Icons.check_circle;
+    }
+    
     return orders.isEmpty
         ? Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(isPending ? Icons.inbox : Icons.check_circle, size: 64, color: Colors.grey[300]),
+                Icon(emptyIcon, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 Text(
-                  isPending ? 'Không có đơn chờ' : 'Không có đơn đang pha',
+                  emptyText,
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
@@ -131,6 +150,18 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
             itemCount: orders.length,
             itemBuilder: (_, i) {
               final order = orders[i];
+              
+              String statusLabel = '⏳ Chờ';
+              Color statusColor = Colors.orange;
+              
+              if (status == 'preparing') {
+                statusLabel = '🔄 Pha';
+                statusColor = Colors.blue;
+              } else if (status == 'completed') {
+                statusLabel = '✅ Hoàn thành';
+                statusColor = Colors.green;
+              }
+              
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 elevation: 2,
@@ -153,11 +184,11 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isPending ? Colors.orange : Colors.blue,
+                              color: statusColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              isPending ? '⏳ Chờ' : '🔄 Pha',
+                              statusLabel,
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
                           ),
@@ -186,26 +217,31 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
                       )),
                       if (order.items.isNotEmpty) const SizedBox(height: 12),
                       // Action buttons
-                      SizedBox(
-                        width: double.infinity,
-                        child: isPending
-                            ? ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1565C0),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                ),
-                                onPressed: () => _startPreparing(order.id),
-                                child: const Text('Bắt đầu pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              )
-                            : ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2E7D32),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                ),
-                                onPressed: () => _completeOrder(order.id),
-                                child: const Text('✅ Hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ),
-                      ),
+                      if (status == 'pending')
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1565C0),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onPressed: () => _startPreparing(order.id),
+                            child: const Text('Bắt đầu pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        )
+                      else if (status == 'preparing')
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E7D32),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                            onPressed: () => _completeOrder(order.id),
+                            child: const Text('✅ Hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      // For completed orders, show a read-only view (no action button)
                     ],
                   ),
                 ),

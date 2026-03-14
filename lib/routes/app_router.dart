@@ -16,6 +16,7 @@ import '../screens/manager/account_management_screen.dart';
 import '../screens/waiter/waiter_dashboard.dart';
 import '../screens/waiter/table/table_list_screen.dart';
 import '../screens/waiter/order/create_order_screen.dart';
+import '../screens/waiter/order/cart_detail_screen.dart';
 import '../screens/waiter/order/order_tracking_screen.dart';
 import '../screens/barista/barista_dashboard.dart';
 import '../screens/barista/order_queue_screen.dart';
@@ -60,6 +61,15 @@ class AppRouter {
           builder: (_) => CreateOrderScreen(
             tableId: args?['tableId'] as String? ?? '',
             tableNumber: args?['tableNumber'] as int? ?? 0,
+          ),
+        );
+      case AppRoutes.waiterCartDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => CartDetailScreen(
+            tableId: args?['tableId'] as String? ?? '',
+            tableNumber: args?['tableNumber'] as int? ?? 0,
+            cartItems: args?['cartItems'] as Map<String, int>? ?? {},
           ),
         );
       case AppRoutes.waiterOrders:

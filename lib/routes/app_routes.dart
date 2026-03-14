@@ -27,6 +27,7 @@ abstract final class AppRoutes {
   static const String waiterDashboard  = '/waiter/dashboard';
   static const String waiterTables     = '/waiter/tables';
   static const String waiterCreateOrder = '/waiter/create-order';
+  static const String waiterCartDetail = '/waiter/cart-detail';
   static const String waiterOrders     = '/waiter/orders';
 
   // ── Barista ───────────────────────────────────────────────────
