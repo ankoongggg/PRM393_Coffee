@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/menu_provider.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String tableId;
@@ -15,33 +17,36 @@ class CreateOrderScreen extends StatefulWidget {
 }
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
-  // TODO: replace with MenuProvider.menuItems (available only)
-  final List<Map<String, dynamic>> _menuItems = [
-    {'id': 'm1', 'name': 'Cà phê sữa đá', 'category': 'Cà phê', 'price': 35000},
-    {'id': 'm2', 'name': 'Cà phê đen', 'category': 'Cà phê', 'price': 25000},
-    {'id': 'm3', 'name': 'Bạc xỉu', 'category': 'Cà phê', 'price': 30000},
-    {'id': 'm4', 'name': 'Matcha latte', 'category': 'Trà', 'price': 45000},
-    {'id': 'm5', 'name': 'Trà đào', 'category': 'Trà', 'price': 40000},
-    {'id': 'm6', 'name': 'Bánh croissant', 'category': 'Bánh', 'price': 25000},
-    {'id': 'm7', 'name': 'Bánh tiramisu', 'category': 'Bánh', 'price': 35000},
-  ];
-
-  final Map<String, int> _cart = {}; // itemId → quantity
   String _selectedCategory = 'Tất cả';
+  final Map<String, int> _cart = {}; // itemId → quantity
 
-  List<String> get _categories => ['Tất cả', ...{for (var m in _menuItems) m['category'] as String}];
-
-  List<Map<String, dynamic>> get _filtered =>
-      _selectedCategory == 'Tất cả' ? _menuItems : _menuItems.where((m) => m['category'] == _selectedCategory).toList();
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Fetch menu items khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MenuProvider>(context, listen: false).fetchAvailableMenuItems();
+    });
+  }
 
   int get _totalItems => _cart.values.fold(0, (s, q) => s + q);
-  int get _totalPrice => _cart.entries.fold(0, (s, e) {
-    final item = _menuItems.firstWhere((m) => m['id'] == e.key);
-    return s + (item['price'] as int) * e.value;
-  });
+  
+  double get _totalPrice {
+    final menuProvider = Provider.of<MenuProvider>(context, listen: false);
+    double total = 0;
+    _cart.forEach((itemId, quantity) {
+      try {
+        final item = menuProvider.menuItems.firstWhere((m) => m.id == itemId);
+        total += item.price * quantity;
+      } catch (e) {
+        // Item không tìm thấy, bỏ qua
+      }
+    });
+    return total;
+  }
 
-  String _formatPrice(int amount) =>
-      amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _formatPrice(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   void _increment(String id) => setState(() => _cart[id] = (_cart[id] ?? 0) + 1);
   void _decrement(String id) => setState(() {
@@ -88,36 +93,77 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Tạo Order - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
+    return Consumer<MenuProvider>(
+      builder: (context, menuProvider, child) {
+        if (menuProvider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32),
+              title: Text('Tạo Order - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (menuProvider.error != null) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32),
+              title: Text('Tạo Order - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('❌ ${menuProvider.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => menuProvider.fetchAvailableMenuItems(),
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final categories = menuProvider.getCategories();
+        final filteredItems = menuProvider.filterByCategory(_selectedCategory);
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF0F9F0),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF2E7D32),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text('Tạo Order - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
       body: Column(
         children: [
-          _buildCategoryFilter(),
-          Expanded(child: _buildMenuGrid()),
+          _buildCategoryFilter(categories),
+          Expanded(child: _buildMenuGrid(menuProvider, filteredItems)),
           if (_totalItems > 0) _buildCartBar(),
         ],
       ),
+        );
+      },
     );
   }
 
-  Widget _buildCategoryFilter() {
+  Widget _buildCategoryFilter(List<String> categories) {
     return SizedBox(
       height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        itemCount: _categories.length,
+        itemCount: categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
-          final cat = _categories[i];
+          final cat = categories[i];
           final selected = cat == _selectedCategory;
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = cat),
@@ -137,77 +183,194 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
-  Widget _buildMenuGrid() {
+  Widget _buildMenuGrid(MenuProvider menuProvider, List items) {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.1,
       ),
-      itemCount: _filtered.length,
+      itemCount: items.length,
       itemBuilder: (_, i) {
-        final item = _filtered[i];
-        final qty = _cart[item['id']] ?? 0;
-        return Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          elevation: 1.5,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
+        final item = items[i];
+        final qty = _cart[item.id] ?? 0;
+        return _MenuItemCard(
+          item: item,
+          qty: qty,
+          onIncrement: () => _increment(item.id),
+          onDecrement: () => _decrement(item.id),
+          formatPrice: _formatPrice,
+        );
+      },
+    );
+  }
+
+  Widget _MenuItemCard({
+    required dynamic item,
+    required int qty,
+    required VoidCallback onIncrement,
+    required VoidCallback onDecrement,
+    required String Function(double) formatPrice,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Large Image Area (expanded to fill space)
+          Expanded(
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                color: const Color(0xFFF5EDE0),
+              ),
+              child: _buildItemImage(item),
+            ),
+          ),
+          // Bottom content (name, price, buttons)
+          Padding(
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.local_cafe, size: 18, color: Color(0xFF2E7D32)),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
-                      child: Text(item['category'], style: const TextStyle(fontSize: 9, color: Color(0xFF2E7D32))),
-                    ),
-                  ],
-                ),
+                // Name + Price
+                _buildItemInfo(item, formatPrice),
                 const SizedBox(height: 6),
-                Text(item['name'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A3C1F)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text('${_formatPrice(item['price'] as int)}đ', style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
-                const Spacer(),
-                if (qty == 0)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 28,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                      onPressed: () => _increment(item['id'] as String),
-                      child: const Text('+ Thêm', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _QtyButton(icon: Icons.remove, onTap: () => _decrement(item['id'] as String)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2E7D32))),
-                      ),
-                      _QtyButton(icon: Icons.add, onTap: () => _increment(item['id'] as String), positive: true),
-                    ],
-                  ),
+                // Buttons
+                _buildItemActions(qty, onIncrement, onDecrement),
               ],
             ),
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemImage(dynamic item) {
+    return Stack(
+      children: [
+        // Image (fills parent)
+        item.imageUrl.isNotEmpty
+            ? ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: Image.network(
+                  item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Center(child: Icon(Icons.local_cafe, size: 50, color: Color(0xFF2E7D32))),
+                ),
+              )
+            : const Center(child: Icon(Icons.local_cafe, size: 50, color: Color(0xFF2E7D32))),
+        // Category Badge
+        Positioned(
+          top: 6,
+          right: 6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              item.category,
+              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemInfo(dynamic item, String Function(double) formatPrice) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          item.name,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1A3C1F)),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${formatPrice(item.price)}đ',
+          style: const TextStyle(fontSize: 11, color: Color(0xFF2E7D32), fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemActions(int qty, VoidCallback onIncrement, VoidCallback onDecrement) {
+    return Row(
+      children: [
+        // Favorite icon
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.favorite_border, size: 16),
+            color: Colors.grey[600],
+            onPressed: () {},
+          ),
+        ),
+        const SizedBox(width: 4),
+        // Quantity or Add button
+        if (qty == 0)
+          Expanded(
+            child: SizedBox(
+              height: 28,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+                onPressed: onIncrement,
+                child: const Text('+ Thêm', style: TextStyle(color: Colors.white, fontSize: 11)),
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: Container(
+              height: 28,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: onDecrement,
+                    child: const Icon(Icons.remove, size: 14, color: Color(0xFF2E7D32)),
+                  ),
+                  Text(
+                    '$qty',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF2E7D32)),
+                  ),
+                  GestureDetector(
+                    onTap: onIncrement,
+                    child: const Icon(Icons.add, size: 14, color: Color(0xFF2E7D32)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -243,25 +406,4 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
     );
   }
-}
-
-class _QtyButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool positive;
-  const _QtyButton({required this.icon, required this.onTap, this.positive = false});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 26,
-      height: 26,
-      decoration: BoxDecoration(
-        color: positive ? const Color(0xFF2E7D32) : const Color(0xFFE8F5E9),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Icon(icon, size: 14, color: positive ? Colors.white : const Color(0xFF2E7D32)),
-    ),
-  );
 }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/order_provider.dart';
+import '../../core/enums/order_status.dart';
 
 class OrderQueueScreen extends StatefulWidget {
   const OrderQueueScreen({super.key});
@@ -10,29 +13,15 @@ class OrderQueueScreen extends StatefulWidget {
 class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // TODO: replace with OrderProvider.pendingOrders / preparingOrders
-  final List<Map<String, dynamic>> _pendingOrders = [
-    {'id': 'ORD001', 'table': 2, 'waiter': 'Nguyễn An', 'time': '08:45', 'items': [
-      {'name': 'Cà phê sữa đá', 'qty': 2},
-      {'name': 'Bạc xỉu', 'qty': 1},
-    ]},
-    {'id': 'ORD005', 'table': 5, 'waiter': 'Trần Bình', 'time': '09:45', 'items': [
-      {'name': 'Matcha latte', 'qty': 2},
-      {'name': 'Trà đào', 'qty': 2},
-    ]},
-  ];
-
-  final List<Map<String, dynamic>> _preparingOrders = [
-    {'id': 'ORD002', 'table': 4, 'waiter': 'Trần Bình', 'time': '09:02', 'items': [
-      {'name': 'Cà phê đen', 'qty': 1},
-      {'name': 'Bánh croissant', 'qty': 1},
-    ]},
-  ];
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // ✅ Fetch pending & preparing orders khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<OrderProvider>(context, listen: false).fetchAllOrders();
+    });
   }
 
   @override
@@ -41,241 +30,187 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     super.dispose();
   }
 
-  void _startPreparing(Map<String, dynamic> order) {
-    setState(() {
-      _pendingOrders.removeWhere((o) => o['id'] == order['id']);
-      _preparingOrders.add(order);
-    });
-    // TODO: OrderProvider.updateStatus(orderId, OrderStatus.preparing)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Bắt đầu pha ${order['id']}'), backgroundColor: const Color(0xFF2196F3)),
-    );
+  void _startPreparing(String orderId) async {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    try {
+      // Update status to "preparing"
+      await orderProvider.updateOrderStatus(orderId, OrderStatus.preparing);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('🔄 Bắt đầu pha $orderId'), backgroundColor: Colors.blue),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
-  void _completeOrder(Map<String, dynamic> order) {
-    setState(() {
-      _preparingOrders.removeWhere((o) => o['id'] == order['id']);
-    });
-    // TODO: OrderProvider.updateStatus(orderId, OrderStatus.completed)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('✅ Hoàn thành ${order['id']} – Thông báo Waiter!'), backgroundColor: const Color(0xFF2E7D32)),
-    );
+  void _completeOrder(String orderId) async {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    try {
+      // Update status to "completed"
+      await orderProvider.updateOrderStatus(orderId, OrderStatus.completed);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('✅ Hoàn thành $orderId – Thông báo Waiter!'), backgroundColor: const Color(0xFF2E7D32)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Hàng đợi pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.hourglass_empty, size: 16),
-                  const SizedBox(width: 6),
-                  Text('Chờ pha (${_pendingOrders.length})'),
-                ],
-              ),
+    return Consumer<OrderProvider>(
+      builder: (context, orderProvider, child) {
+        if (orderProvider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF1565C0),
+              title: const Text('Hàng đợi pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.local_cafe, size: 16),
-                  const SizedBox(width: 6),
-                  Text('Đang pha (${_preparingOrders.length})'),
-                ],
-              ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final pendingOrders = orderProvider.pendingOrders;
+        final preparingOrders = orderProvider.preparingOrders;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF0F4FF),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1565C0),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildPendingTab(),
-          _buildPreparingTab(),
-        ],
-      ),
+            title: const Text('Hàng đợi pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white60,
+              tabs: [
+                Tab(child: Text('⏳ Chờ (${pendingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
+                Tab(child: Text('🔄 Đang pha (${preparingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildOrderList(pendingOrders, true),
+              _buildOrderList(preparingOrders, false),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildPendingTab() {
-    if (_pendingOrders.isEmpty) {
-      return _buildEmptyState('Không có đơn đang chờ', Icons.hourglass_empty);
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _pendingOrders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _buildOrderCard(
-        _pendingOrders[i],
-        actionLabel: 'Bắt đầu pha',
-        actionColor: const Color(0xFF1565C0),
-        actionIcon: Icons.local_cafe,
-        onAction: () => _startPreparing(_pendingOrders[i]),
-        statusColor: const Color(0xFFE67E22),
-        statusLabel: 'Chờ pha',
-      ),
-    );
-  }
-
-  Widget _buildPreparingTab() {
-    if (_preparingOrders.isEmpty) {
-      return _buildEmptyState('Không có đơn đang pha', Icons.local_cafe);
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _preparingOrders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _buildOrderCard(
-        _preparingOrders[i],
-        actionLabel: 'Hoàn thành',
-        actionColor: const Color(0xFF2E7D32),
-        actionIcon: Icons.check_circle_outline,
-        onAction: () => _completeOrder(_preparingOrders[i]),
-        statusColor: const Color(0xFF2196F3),
-        statusLabel: 'Đang pha',
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(
-    Map<String, dynamic> order, {
-    required String actionLabel,
-    required Color actionColor,
-    required IconData actionIcon,
-    required VoidCallback onAction,
-    required Color statusColor,
-    required String statusLabel,
-  }) {
-    final items = order['items'] as List;
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
+  Widget _buildOrderList(List orders, bool isPending) {
+    return orders.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.receipt, color: statusColor, size: 20),
+                Icon(isPending ? Icons.inbox : Icons.check_circle, size: 64, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Text(
+                  isPending ? 'Không có đơn chờ' : 'Không có đơn đang pha',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
+              ],
+            ),
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: orders.length,
+            itemBuilder: (_, i) {
+              final order = orders[i];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(order['id'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A237E))),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.table_bar, size: 12, color: Color(0xFF7986CB)),
-                          const SizedBox(width: 3),
-                          Text('Bàn ${order['table']}', style: const TextStyle(fontSize: 12, color: Color(0xFF7986CB))),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.person_outline, size: 12, color: Color(0xFF7986CB)),
-                          const SizedBox(width: 3),
-                          Text(order['waiter'], style: const TextStyle(fontSize: 12, color: Color(0xFF7986CB))),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('📋 ${order.id}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text('Bàn ${order.tableNumber} - ${order.waiterName}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isPending ? Colors.orange : Colors.blue,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              isPending ? '⏳ Chờ' : '🔄 Pha',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
                         ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Items list
+                      ...order.items.map((item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text('• ${item.menuItemName}', style: const TextStyle(fontSize: 13)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text('×${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      )),
+                      if (order.items.isNotEmpty) const SizedBox(height: 12),
+                      // Action buttons
+                      SizedBox(
+                        width: double.infinity,
+                        child: isPending
+                            ? ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1565C0),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                                onPressed: () => _startPreparing(order.id),
+                                child: const Text('Bắt đầu pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              )
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                                onPressed: () => _completeOrder(order.id),
+                                child: const Text('✅ Hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
                       ),
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(statusLabel, style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 11, color: Color(0xFF9E9E9E)),
-                        const SizedBox(width: 2),
-                        Text(order['time'], style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E))),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const Divider(height: 20),
-            // Items
-            ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  const Icon(Icons.fiber_manual_record, size: 8, color: Color(0xFF7986CB)),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 13))),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8EAF6),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('x${item['qty']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1565C0))),
-                  ),
-                ],
-              ),
-            )),
-            const SizedBox(height: 10),
-            // Action button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                icon: Icon(actionIcon, color: Colors.white, size: 18),
-                label: Text(actionLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                onPressed: onAction,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String message, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 56, color: const Color(0xFF7986CB).withValues(alpha: 0.4)),
-          const SizedBox(height: 12),
-          Text(message, style: const TextStyle(fontSize: 15, color: Color(0xFF7986CB))),
-        ],
-      ),
-    );
+              );
+            },
+          );
   }
 }

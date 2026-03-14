@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/table_provider.dart';
 import '../../waiter/order/create_order_screen.dart';
 
 class TableListScreen extends StatefulWidget {
@@ -9,15 +11,14 @@ class TableListScreen extends StatefulWidget {
 }
 
 class _TableListScreenState extends State<TableListScreen> {
-  // TODO: replace with TableProvider.tables
-  final List<Map<String, dynamic>> _tables = [
-    {'id': '1', 'number': 1, 'capacity': 2, 'status': 'available'},
-    {'id': '2', 'number': 2, 'capacity': 4, 'status': 'occupied', 'orderId': 'ORD002'},
-    {'id': '3', 'number': 3, 'capacity': 4, 'status': 'available'},
-    {'id': '4', 'number': 4, 'capacity': 6, 'status': 'reserved'},
-    {'id': '5', 'number': 5, 'capacity': 2, 'status': 'occupied', 'orderId': 'ORD005'},
-    {'id': '6', 'number': 6, 'capacity': 8, 'status': 'available'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Fetch tables từ Firebase khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TableProvider>(context, listen: false).fetchTables();
+    });
+  }
 
   Color _statusColor(String s) => switch (s) {
     'available' => const Color(0xFF27AE60),
@@ -58,25 +59,65 @@ class _TableListScreenState extends State<TableListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final available = _tables.where((t) => t['status'] == 'available').length;
-    final occupied = _tables.where((t) => t['status'] == 'occupied').length;
+    // ✅ Dùng Consumer để lấy data từ TableProvider
+    return Consumer<TableProvider>(
+      builder: (context, tableProvider, child) {
+        final tables = tableProvider.tables;
+        final available = tables.where((t) => t.status.toString().split('.').last == 'available').length;
+        final occupied = tables.where((t) => t.status.toString().split('.').last == 'occupied').length;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      body: Column(
-        children: [
-          _buildLegendBar(available, occupied),
-          Expanded(child: _buildGrid()),
-        ],
-      ),
+        if (tableProvider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32),
+              title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (tableProvider.error != null) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32),
+              title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('❌ ${tableProvider.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => tableProvider.fetchTables(),
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF0F9F0),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF2E7D32),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          body: Column(
+            children: [
+              _buildLegendBar(available, occupied),
+              Expanded(child: _buildGrid(tables)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -100,7 +141,8 @@ class _TableListScreenState extends State<TableListScreen> {
     );
   }
 
-  Widget _buildGrid() {
+  Widget _buildGrid(List tables) {
+    // ✅ Nhận tables từ parameter (từ TableProvider)
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -109,15 +151,16 @@ class _TableListScreenState extends State<TableListScreen> {
         mainAxisSpacing: 12,
         childAspectRatio: 1.1,
       ),
-      itemCount: _tables.length,
-      itemBuilder: (_, i) => _buildTableCard(_tables[i]),
+      itemCount: tables.length,
+      itemBuilder: (_, i) => _buildTableCard(tables[i]),
     );
   }
 
-  Widget _buildTableCard(Map<String, dynamic> table) {
-    final status = table['status'] as String;
-    final color = _statusColor(status);
-    final isAvailable = status == 'available';
+  Widget _buildTableCard(dynamic tableModel) {
+    // ✅ Chuyển đổi TableModel → thông tin hiển thị
+    final statusStr = tableModel.status.toString().split('.').last;
+    final color = _statusColor(statusStr);
+    final isAvailable = statusStr == 'available';
 
     return Material(
       color: isAvailable ? color.withValues(alpha: 0.08) : color.withValues(alpha: 0.05),
@@ -125,7 +168,11 @@ class _TableListScreenState extends State<TableListScreen> {
       elevation: isAvailable ? 2 : 1,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _onTableTap(table),
+        onTap: () => _onTableTap({
+          'id': tableModel.id,
+          'number': tableModel.tableNumber,
+          'status': statusStr,
+        }),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -137,21 +184,21 @@ class _TableListScreenState extends State<TableListScreen> {
             children: [
               Icon(Icons.table_bar, size: 36, color: color),
               const SizedBox(height: 8),
-              Text('Bàn ${table['number']}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+              Text('Bàn ${tableModel.tableNumber}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.people_outline, size: 12, color: color.withValues(alpha: 0.7)),
                   const SizedBox(width: 3),
-                  Text('${table['capacity']} chỗ', style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
+                  Text('${tableModel.capacity} chỗ', style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
                 ],
               ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
-                child: Text(_statusLabel(status), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+                child: Text(_statusLabel(statusStr), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
               ),
               if (isAvailable) ...[
                 const SizedBox(height: 6),
