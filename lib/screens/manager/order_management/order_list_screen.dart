@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/order_provider.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -8,22 +10,28 @@ class OrderListScreen extends StatefulWidget {
 }
 
 class _OrderListScreenState extends State<OrderListScreen> {
-  // TODO: replace with OrderProvider.orders
-  final List<Map<String, dynamic>> _orders = [
-    {'id': 'ORD001', 'table': 2, 'waiter': 'Nguyễn An', 'items': 3, 'total': 125000, 'status': 'pending', 'time': '08:45'},
-    {'id': 'ORD002', 'table': 4, 'waiter': 'Trần Bình', 'items': 2, 'total': 89000, 'status': 'preparing', 'time': '09:02'},
-    {'id': 'ORD003', 'table': 1, 'waiter': 'Lê Chi', 'items': 5, 'total': 210000, 'status': 'completed', 'time': '09:15'},
-    {'id': 'ORD004', 'table': 3, 'waiter': 'Nguyễn An', 'items': 1, 'total': 45000, 'status': 'served', 'time': '09:30'},
-    {'id': 'ORD005', 'table': 5, 'waiter': 'Trần Bình', 'items': 4, 'total': 168000, 'status': 'pending', 'time': '09:45'},
-    {'id': 'ORD006', 'table': 6, 'waiter': 'Lê Chi', 'items': 2, 'total': 76000, 'status': 'cancelled', 'time': '10:00'},
-  ];
-
   String _selectedFilter = 'all';
   final _filters = ['all', 'pending', 'preparing', 'completed', 'served', 'cancelled'];
   final _filterLabels = {
     'all': 'Tất cả', 'pending': 'Chờ pha', 'preparing': 'Đang pha',
     'completed': 'Xong', 'served': 'Đã phục vụ', 'cancelled': 'Đã hủy',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Fetch orders khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<OrderProvider>(context, listen: false).fetchAllOrders();
+    });
+  }
+
+  List<dynamic> _getFilteredOrders(OrderProvider provider) {
+    if (_selectedFilter == 'all') {
+      return provider.orders;
+    }
+    return provider.orders.where((o) => o.status.toString().split('.').last == _selectedFilter).toList();
+  }
 
   Color _statusColor(String s) => switch (s) {
     'pending' => const Color(0xFFE67E22),
@@ -43,31 +51,54 @@ class _OrderListScreenState extends State<OrderListScreen> {
     _ => s,
   };
 
-  List<Map<String, dynamic>> get _filtered =>
-      _selectedFilter == 'all' ? _orders : _orders.where((o) => o['status'] == _selectedFilter).toList();
-
-  String _formatPrice(int amount) =>
-      amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _formatPrice(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      body: Column(
-        children: [
-          _buildFilterBar(),
-          _buildSummaryRow(),
-          Expanded(child: _buildOrderList()),
-        ],
-      ),
+    return Consumer<OrderProvider>(
+      builder: (context, orderProvider, child) {
+        if (orderProvider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF6F4E37),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final filteredOrders = _getFilteredOrders(orderProvider);
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFFAF6F1),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF6F4E37),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: () => orderProvider.fetchAllOrders(),
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              _buildFilterBar(),
+              _buildSummaryRow(filteredOrders),
+              Expanded(child: _buildOrderList(filteredOrders)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -107,8 +138,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
-  Widget _buildSummaryRow() {
-    final total = _filtered.fold<int>(0, (s, o) => s + (o['total'] as int));
+  Widget _buildSummaryRow(List<dynamic> orders) {
+    final total = orders.fold<double>(0, (s, o) => s + o.totalAmount);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -121,7 +152,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         children: [
           const Icon(Icons.receipt_long, size: 16, color: Color(0xFF9E7B5A)),
           const SizedBox(width: 6),
-          Text('${_filtered.length} đơn', style: const TextStyle(fontSize: 13, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          Text('${orders.length} đơn', style: const TextStyle(fontSize: 13, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
           const Spacer(),
           Text('Tổng: ${_formatPrice(total)}đ', style: const TextStyle(fontSize: 13, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
         ],
@@ -129,8 +160,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
-  Widget _buildOrderList() {
-    if (_filtered.isEmpty) {
+  Widget _buildOrderList(List<dynamic> orders) {
+    if (orders.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -144,21 +175,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: _filtered.length,
+      itemCount: orders.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _buildOrderCard(_filtered[i]),
+      itemBuilder: (_, i) => _buildOrderCard(orders[i]),
     );
   }
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    final statusColor = _statusColor(order['status']);
+  Widget _buildOrderCard(dynamic order) {
+    final statusString = order.status.toString().split('.').last;
+    final statusColor = _statusColor(statusString);
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(14),
       elevation: 1.5,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.pushNamed(context, '/manager/orders/detail', arguments: order['id']),
+        onTap: () => Navigator.pushNamed(context, '/manager/orders/detail', arguments: order.id),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -179,7 +211,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(order['id'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
+                        Text(order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -187,7 +219,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                             color: statusColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(_statusLabel(order['status']), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w700)),
+                          child: Text(_statusLabel(statusString), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ),
@@ -196,11 +228,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                       children: [
                         const Icon(Icons.table_bar, size: 12, color: Color(0xFF9E7B5A)),
                         const SizedBox(width: 3),
-                        Text('Bàn ${order['table']}', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        Text('Bàn ${order.tableNumber}', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
                         const SizedBox(width: 10),
                         const Icon(Icons.person_outline, size: 12, color: Color(0xFF9E7B5A)),
                         const SizedBox(width: 3),
-                        Text(order['waiter'], style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        Text(order.waiterName, style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -208,11 +240,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                       children: [
                         const Icon(Icons.local_cafe_outlined, size: 12, color: Color(0xFF9E7B5A)),
                         const SizedBox(width: 3),
-                        Text('${order['items']} món', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        Text('${order.items.length} món', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
                         const SizedBox(width: 10),
                         const Icon(Icons.access_time, size: 12, color: Color(0xFF9E7B5A)),
                         const SizedBox(width: 3),
-                        Text(order['time'], style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        Text('${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
                       ],
                     ),
                   ],
@@ -221,7 +253,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('${_formatPrice(order['total'] as int)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF6F4E37))),
+                  Text('${_formatPrice(order.totalAmount)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF6F4E37))),
                   const SizedBox(height: 8),
                   const Icon(Icons.chevron_right, color: Color(0xFFD4A864)),
                 ],

@@ -1,109 +1,173 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/report_provider.dart';
 
-class ReportScreen extends StatelessWidget {
+class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
 
-  // TODO: replace with ReportProvider data
-  static const _revenueByDay = [
-    {'day': 'T2', 'amount': 850000},
-    {'day': 'T3', 'amount': 1200000},
-    {'day': 'T4', 'amount': 970000},
-    {'day': 'T5', 'amount': 1450000},
-    {'day': 'T6', 'amount': 1320000},
-    {'day': 'T7', 'amount': 1780000},
-    {'day': 'CN', 'amount': 2100000},
-  ];
+  @override
+  State<ReportScreen> createState() => _ReportScreenState();
+}
 
-  static const _topItems = [
-    {'name': 'Cà phê sữa đá', 'qty': 48, 'revenue': 1680000},
-    {'name': 'Matcha latte', 'qty': 32, 'revenue': 1440000},
-    {'name': 'Bạc xỉu', 'qty': 27, 'revenue': 810000},
-    {'name': 'Cà phê đen', 'qty': 25, 'revenue': 625000},
-    {'name': 'Bánh croissant', 'qty': 20, 'revenue': 500000},
-  ];
+class _ReportScreenState extends State<ReportScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Fetch báo cáo khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final reportProvider = Provider.of<ReportProvider>(context, listen: false);
+      reportProvider.fetchTodayReport();
+      reportProvider.fetchLast7DaysRevenue();
+      reportProvider.fetchTopSellingItems();
+    });
+  }
 
-  static const int _todayRevenue = 2100000;
-  static const int _todayOrders = 38;
-  static const int _todayCustomers = 52;
-
-  String _formatPrice(int amount) =>
-      amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+  String _formatPrice(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Báo cáo doanh thu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_today, color: Colors.white70),
-            onPressed: () {},
+    return Consumer<ReportProvider>(
+      builder: (context, reportProvider, child) {
+        if (reportProvider.isLoading) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFFAF6F1),
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF6F4E37),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text('Báo cáo doanh thu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final report = reportProvider.todayReport;
+        final revenueByDay = reportProvider.revenueByDay;
+        final topItems = reportProvider.topSellingItems;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFFAF6F1),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF6F4E37),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Báo cáo doanh thu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white70),
+                onPressed: () {
+                  reportProvider.fetchTodayReport();
+                  reportProvider.fetchLast7DaysRevenue();
+                  reportProvider.fetchTopSellingItems();
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDateLabel(),
-            const SizedBox(height: 16),
-            _buildSummaryCards(),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Doanh thu 7 ngày'),
-            const SizedBox(height: 12),
-            _buildBarChart(),
-            const SizedBox(height: 20),
-            _buildSectionTitle('Top món bán chạy'),
-            const SizedBox(height: 12),
-            _buildTopItemsList(),
-          ],
-        ),
-      ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDateLabel(report),
+                const SizedBox(height: 16),
+                _buildSummaryCards(report),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Doanh thu 7 ngày'),
+                const SizedBox(height: 12),
+                _buildBarChart(revenueByDay),
+                const SizedBox(height: 20),
+                _buildSectionTitle('Top món bán chạy'),
+                const SizedBox(height: 12),
+                _buildTopItemsList(topItems),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildDateLabel() {
+  Widget _buildDateLabel(ReportData report) {
+    final now = DateTime.now();
+    final dayName = _getDayName(now.weekday);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFD4A864).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.today, size: 14, color: Color(0xFF6F4E37)),
-          SizedBox(width: 6),
-          Text('Hôm nay - Chủ nhật', style: TextStyle(fontSize: 12, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          const Icon(Icons.today, size: 14, color: Color(0xFF6F4E37)),
+          const SizedBox(width: 6),
+          Text('Hôm nay - $dayName', style: const TextStyle(fontSize: 12, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCards() {
+  String _getDayName(int weekday) {
+    const days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    return days[weekday - 1];
+  }
+
+  Widget _buildSummaryCards(ReportData report) {
     return Row(
       children: [
-        Expanded(child: _SummaryCard(icon: Icons.attach_money, label: 'Doanh thu', value: '${_formatPrice(_todayRevenue)}đ', color: const Color(0xFF27AE60))),
+        Expanded(
+          child: _SummaryCard(
+            icon: Icons.attach_money,
+            label: 'Doanh thu',
+            value: '${_formatPrice(report.totalRevenue)}đ',
+            color: const Color(0xFF27AE60),
+          ),
+        ),
         const SizedBox(width: 10),
-        Expanded(child: _SummaryCard(icon: Icons.receipt_long, label: 'Đơn hàng', value: '$_todayOrders', color: const Color(0xFF2980B9))),
+        Expanded(
+          child: _SummaryCard(
+            icon: Icons.receipt_long,
+            label: 'Đơn hàng',
+            value: '${report.totalOrders}',
+            color: const Color(0xFF2980B9),
+          ),
+        ),
         const SizedBox(width: 10),
-        Expanded(child: _SummaryCard(icon: Icons.people, label: 'Khách', value: '$_todayCustomers', color: const Color(0xFFE67E22))),
+        Expanded(
+          child: _SummaryCard(
+            icon: Icons.trending_up,
+            label: 'Trung bình',
+            value: '${_formatPrice(report.averageOrderValue)}đ',
+            color: const Color(0xFFE67E22),
+          ),
+        ),
       ],
     );
   }
-
   Widget _buildSectionTitle(String title) => Text(title,
     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C1A0E)));
 
-  Widget _buildBarChart() {
-    final maxAmount = _revenueByDay.map((d) => d['amount'] as int).reduce((a, b) => a > b ? a : b);
+  Widget _buildBarChart(Map<String, double> revenueByDay) {
+    if (revenueByDay.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        ),
+        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF9E7B5A)))),
+      );
+    }
+
+    final amounts = revenueByDay.values.toList();
+    final maxAmount = amounts.reduce((a, b) => a > b ? a : b);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -118,9 +182,9 @@ class ReportScreen extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _revenueByDay.map((d) {
-                final amount = d['amount'] as int;
-                final ratio = amount / maxAmount;
+              children: revenueByDay.entries.map((e) {
+                final amount = e.value;
+                final ratio = maxAmount > 0 ? amount / maxAmount : 0;
                 final isMax = amount == maxAmount;
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -130,7 +194,7 @@ class ReportScreen extends StatelessWidget {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 500),
                       width: 28,
-                      height: 100 * ratio,
+                      height: (100 * ratio).toDouble(),
                       decoration: BoxDecoration(
                         color: isMax ? const Color(0xFF6F4E37) : const Color(0xFFD4A864).withValues(alpha: 0.7),
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
@@ -144,14 +208,28 @@ class ReportScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: _revenueByDay.map((d) => Text(d['day'] as String, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A)))).toList(),
+            children: revenueByDay.keys.map((day) => Text(day, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A)))).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTopItemsList() {
+  Widget _buildTopItemsList(Map<String, int> topItems) {
+    if (topItems.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        ),
+        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF9E7B5A)))),
+      );
+    }
+
+    final items = topItems.entries.take(5).toList();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -159,8 +237,8 @@ class ReportScreen extends StatelessWidget {
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
       ),
       child: Column(
-        children: List.generate(_topItems.length, (i) {
-          final item = _topItems[i];
+        children: List.generate(items.length, (i) {
+          final item = items[i];
           return Column(
             children: [
               ListTile(
@@ -182,11 +260,11 @@ class ReportScreen extends StatelessWidget {
                     )),
                   ),
                 ),
-                title: Text(item['name'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                subtitle: Text('${item['qty']} ly bán ra', style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
-                trailing: Text('${_formatPrice(item['revenue'] as int)}đ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6F4E37))),
+                title: Text(item.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: Text('${item.value} ly bán ra', style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
+                trailing: Text('${_formatPrice(item.value * 35000.0)}đ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6F4E37))),
               ),
-              if (i < _topItems.length - 1) const Divider(height: 1, indent: 56),
+              if (i < items.length - 1) const Divider(height: 1, indent: 56),
             ],
           );
         }),

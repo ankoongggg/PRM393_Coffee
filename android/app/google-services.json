@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "268988164591",
+    "project_id": "prm393-coffemanagement",
+    "storage_bucket": "prm393-coffemanagement.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268988164591:android:545609c977bdd98d5f2e1a",
+        "android_client_info": {
+          "package_name": "com.prm393.prm393_coffee"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "268988164591-tp2ra7hdfcitc481maoqk6k0omhc6ua1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJBjOC6ZGlYLDy4chqdh5olF2BAEWXgVU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "268988164591-tp2ra7hdfcitc481maoqk6k0omhc6ua1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

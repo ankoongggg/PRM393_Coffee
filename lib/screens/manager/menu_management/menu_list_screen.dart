@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../routes/app_routes.dart';
+import '../../../providers/menu_provider.dart';
 
 class MenuListScreen extends StatefulWidget {
   const MenuListScreen({super.key});
@@ -10,70 +12,93 @@ class MenuListScreen extends StatefulWidget {
 
 class _MenuListScreenState extends State<MenuListScreen> {
   String _selectedCategory = 'Tất cả';
-  final List<String> _categories = ['Tất cả', 'Espresso', 'Latte', 'Cappuccino', 'Cold Brew', 'Frappe'];
 
-  // TODO: thay bằng MenuProvider.menuItems
-  final List<Map<String, dynamic>> _mockItems = [
-    {'name': 'Espresso Đậm Đà', 'price': 35000, 'category': 'Espresso', 'available': true, 'image': '☕'},
-    {'name': 'Caramel Latte', 'price': 55000, 'category': 'Latte', 'available': true, 'image': '🥛'},
-    {'name': 'Cappuccino Cổ Điển', 'price': 50000, 'category': 'Cappuccino', 'available': false, 'image': '☁️'},
-    {'name': 'Cold Brew Mật Ong', 'price': 60000, 'category': 'Cold Brew', 'available': true, 'image': '🧊'},
-    {'name': 'Matcha Frappe', 'price': 65000, 'category': 'Frappe', 'available': true, 'image': '🍵'},
-    {'name': 'Vanilla Latte', 'price': 58000, 'category': 'Latte', 'available': true, 'image': '🌼'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Fetch menu items khi mở screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MenuProvider>(context, listen: false).fetchMenuItems();
+    });
+  }
 
-  List<Map<String, dynamic>> get _filteredItems => _selectedCategory == 'Tất cả'
-      ? _mockItems
-      : _mockItems.where((e) => e['category'] == _selectedCategory).toList();
+  List<dynamic> _getFilteredItems(MenuProvider provider) {
+    if (_selectedCategory == 'Tất cả') {
+      return provider.menuItems;
+    }
+    return provider.menuItems.where((item) => item.category == _selectedCategory).toList();
+  }
 
-  String _formatPrice(int price) =>
-      price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
+  String _formatPrice(double price) =>
+      price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Quản lý Menu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {}, // TODO: search
+    return Consumer<MenuProvider>(
+      builder: (context, menuProvider, child) {
+        if (menuProvider.isLoading) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF6F4E37),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text('Quản lý Menu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final categories = menuProvider.getCategories();
+        final filteredItems = _getFilteredItems(menuProvider);
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFFAF6F1),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF6F4E37),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Quản lý Menu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: () => menuProvider.fetchMenuItems(),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF6F4E37),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Thêm món', style: TextStyle(color: Colors.white)),
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.managerMenuAdd),
-      ),
-      body: Column(
-        children: [
-          _buildCategoryFilter(),
-          _buildSummaryBar(),
-          Expanded(child: _buildMenuList()),
-        ],
-      ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: const Color(0xFF6F4E37),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Thêm món', style: TextStyle(color: Colors.white)),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.managerMenuAdd),
+          ),
+          body: Column(
+            children: [
+              _buildCategoryFilter(categories),
+              _buildSummaryBar(filteredItems),
+              Expanded(child: _buildMenuList(filteredItems)),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildCategoryFilter() {
+  Widget _buildCategoryFilter(List<String> categories) {
+    final allCategories = ['Tất cả', ...categories];
     return Container(
       color: Colors.white,
       height: 52,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: _categories.length,
+        itemCount: allCategories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
-          final cat = _categories[i];
+          final cat = allCategories[i];
           final selected = cat == _selectedCategory;
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = cat),
@@ -100,9 +125,9 @@ class _MenuListScreenState extends State<MenuListScreen> {
     );
   }
 
-  Widget _buildSummaryBar() {
-    final total = _filteredItems.length;
-    final available = _filteredItems.where((e) => e['available'] == true).length;
+  Widget _buildSummaryBar(List<dynamic> items) {
+    final total = items.length;
+    final available = items.where((item) => item.isAvailable == true).length;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -122,8 +147,8 @@ class _MenuListScreenState extends State<MenuListScreen> {
     );
   }
 
-  Widget _buildMenuList() {
-    if (_filteredItems.isEmpty) {
+  Widget _buildMenuList(List<dynamic> items) {
+    if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -137,14 +162,14 @@ class _MenuListScreenState extends State<MenuListScreen> {
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      itemCount: _filteredItems.length,
+      itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _buildMenuCard(_filteredItems[i], i),
+      itemBuilder: (_, i) => _buildMenuCard(items[i], i),
     );
   }
 
-  Widget _buildMenuCard(Map<String, dynamic> item, int index) {
-    final isAvailable = item['available'] as bool;
+  Widget _buildMenuCard(dynamic item, int index) {
+    final isAvailable = item.isAvailable;
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(14),
@@ -162,14 +187,14 @@ class _MenuListScreenState extends State<MenuListScreen> {
                 color: const Color(0xFFF5EDE0),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(child: Text(item['image'], style: const TextStyle(fontSize: 28))),
+              child: Center(child: Text('☕', style: const TextStyle(fontSize: 28))),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item['name'],
+                  Text(item.name,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
                   const SizedBox(height: 4),
                   Row(
@@ -180,7 +205,7 @@ class _MenuListScreenState extends State<MenuListScreen> {
                           color: const Color(0xFF6F4E37).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(item['category'],
+                        child: Text(item.category,
                             style: const TextStyle(fontSize: 10, color: Color(0xFF6F4E37))),
                       ),
                       const SizedBox(width: 8),
@@ -205,7 +230,7 @@ class _MenuListScreenState extends State<MenuListScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_formatPrice(item['price'])}đ',
+                    '${_formatPrice(item.price)}đ',
                     style: const TextStyle(
                       color: Color(0xFF6F4E37),
                       fontWeight: FontWeight.bold,
@@ -231,13 +256,7 @@ class _MenuListScreenState extends State<MenuListScreen> {
                 _ActionIconButton(
                   icon: Icons.delete_outline,
                   color: Colors.red,
-                  onTap: () => _confirmDelete(context, item['name']),
-                ),
-                const SizedBox(height: 6),
-                _ActionIconButton(
-                  icon: isAvailable ? Icons.toggle_on : Icons.toggle_off_outlined,
-                  color: isAvailable ? Colors.green : Colors.grey,
-                  onTap: () => setState(() => _mockItems[_mockItems.indexOf(item)]['available'] = !isAvailable),
+                  onTap: () => _confirmDelete(context, item.name),
                 ),
               ],
             ),
