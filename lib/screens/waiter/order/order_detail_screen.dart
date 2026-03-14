@@ -194,192 +194,201 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: widget.order.items.length,
-              itemBuilder: (_, i) {
-                final item = widget.order.items[i];
-                final itemTotal = item.subtotal;
+      body: Consumer<OrderProvider>(
+        builder: (context, orderProvider, _) {
+          // Lấy order hiện tại từ provider (real-time updates)
+          final currentOrder = orderProvider.orders.firstWhere(
+            (o) => o.id == widget.order.id,
+            orElse: () => widget.order,
+          );
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        // Item info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.menuItemName,
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: currentOrder.items.length,
+                  itemBuilder: (_, i) {
+                    final item = currentOrder.items[i];
+                    final itemTotal = item.subtotal;
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            // Item info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.menuItemName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${_formatPrice(item.unitPrice)}đ × ${item.quantity} = ${_formatPrice(itemTotal)}đ',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF2E7D32),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Quantity badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '×${item.quantity}',
                                 style: const TextStyle(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${_formatPrice(item.unitPrice)}đ × ${item.quantity} = ${_formatPrice(itemTotal)}đ',
-                                style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF2E7D32),
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // Bottom summary and action buttons
+              Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E7D32),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Tổng: ${currentOrder.items.length} món',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
-                        // Quantity badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2E7D32),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '×${item.quantity}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
+                        Text(
+                          '${_formatPrice(currentOrder.items.fold<double>(0, (sum, item) => sum + item.subtotal))}đ',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          // Bottom summary and action buttons
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E7D32),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tổng: ${widget.order.items.length} món',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      '${_formatPrice(_totalPrice)}đ',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            label: const Text(
+                              'Đặt thêm',
+                              style: TextStyle(
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: _isProcessing ? null : _onAddMore,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red[100],
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.close_outlined,
+                              color: Colors.red,
+                            ),
+                            label: const Text(
+                              'Hủy đơn',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: _isProcessing ? null : _onCancelOrder,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              disabledBackgroundColor: Colors.grey[300],
+                            ),
+                            icon: Icon(
+                              Icons.check_circle_outline,
+                              color: currentOrder.status == OrderStatus.completed
+                                  ? const Color(0xFF2E7D32)
+                                  : Colors.grey,
+                            ),
+                            label: Text(
+                              'Đã phục vụ',
+                              style: TextStyle(
+                                color: currentOrder.status == OrderStatus.completed
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            // Chỉ enable khi order đã hoàn thành
+                            onPressed: (currentOrder.status == OrderStatus.completed && !_isProcessing)
+                                ? _onServed
+                                : null,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        icon: const Icon(
-                          Icons.add_circle_outline,
-                          color: Color(0xFF2E7D32),
-                        ),
-                        label: const Text(
-                          'Đặt thêm',
-                          style: TextStyle(
-                            color: Color(0xFF2E7D32),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onPressed: _isProcessing ? null : _onAddMore,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[100],
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        icon: const Icon(
-                          Icons.close_outlined,
-                          color: Colors.red,
-                        ),
-                        label: const Text(
-                          'Hủy đơn',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onPressed: _isProcessing ? null : _onCancelOrder,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          disabledBackgroundColor: Colors.grey[300],
-                        ),
-                        icon: Icon(
-                          Icons.check_circle_outline,
-                          color: widget.order.status == OrderStatus.completed
-                              ? const Color(0xFF2E7D32)
-                              : Colors.grey,
-                        ),
-                        label: Text(
-                          'Đã phục vụ',
-                          style: TextStyle(
-                            color: widget.order.status == OrderStatus.completed
-                                ? const Color(0xFF2E7D32)
-                                : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Chỉ enable khi order đã hoàn thành
-                        onPressed: (widget.order.status == OrderStatus.completed && !_isProcessing)
-                            ? _onServed
-                            : null,
-                      ),
-                    ),
-                    
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
