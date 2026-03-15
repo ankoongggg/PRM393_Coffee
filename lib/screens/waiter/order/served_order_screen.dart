@@ -61,27 +61,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
         final tableProvider =
             Provider.of<TableProvider>(context, listen: false);
         
-        // Lấy order hiện tại để cập nhật
-        final tableOrders = orderProvider.ordersByTable(widget.tableId);
-        final completedOrders = tableOrders
-            .where((o) => o.status == OrderStatus.completed)
-            .toList();
-        
-        if (completedOrders.isNotEmpty) {
-          final currentOrder = completedOrders.first;
-          
-          // ✅ Cập nhật order status thành "served"
-          await orderProvider.updateOrderStatus(
-            currentOrder.id,
-            OrderStatus.served,
-          );
-          
-          // Refresh data để Manager thấy order đã phục vụ
-          await Future.delayed(const Duration(milliseconds: 500));
-          orderProvider.startOrderListener();
-        }
-        
-        // Sau đó reset table thành available
+        // Reset table thành available
         await tableProvider.setTableAvailable(widget.tableId);
 
         if (mounted) {

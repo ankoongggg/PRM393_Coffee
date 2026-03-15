@@ -11,10 +11,10 @@ class OrderListScreen extends StatefulWidget {
 
 class _OrderListScreenState extends State<OrderListScreen> {
   String _selectedFilter = 'all';
-  final _filters = ['all', 'pending', 'preparing', 'completed', 'served', 'cancelled'];
+  final _filters = ['all', 'pending', 'preparing', 'completed', 'cancelled'];
   final _filterLabels = {
     'all': 'Tất cả', 'pending': 'Chờ pha', 'preparing': 'Đang pha',
-    'completed': 'Xong', 'served': 'Đã phục vụ', 'cancelled': 'Đã hủy',
+    'completed': 'Xong', 'cancelled': 'Đã hủy',
   };
 
   @override
@@ -37,7 +37,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
     'pending' => const Color(0xFFE67E22),
     'preparing' => const Color(0xFF2980B9),
     'completed' => const Color(0xFF27AE60),
-    'served' => const Color(0xFF8E44AD),
     'cancelled' => Colors.grey,
     _ => Colors.grey,
   };
@@ -46,7 +45,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
     'pending' => 'Chờ pha',
     'preparing' => 'Đang pha',
     'completed' => 'Hoàn thành',
-    'served' => 'Đã phục vụ',
     'cancelled' => 'Đã hủy',
     _ => s,
   };

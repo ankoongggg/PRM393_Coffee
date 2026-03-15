@@ -12,7 +12,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   // TODO: replace with OrderProvider.getOrderById(orderId)
   late Map<String, dynamic> _order;
 
-  final _statusFlow = ['pending', 'preparing', 'completed', 'served'];
+  final _statusFlow = ['pending', 'preparing', 'completed'];
 
   @override
   void initState() {
@@ -42,7 +42,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     'pending' => const Color(0xFFE67E22),
     'preparing' => const Color(0xFF2980B9),
     'completed' => const Color(0xFF27AE60),
-    'served' => const Color(0xFF8E44AD),
     'cancelled' => Colors.grey,
     _ => Colors.grey,
   };
@@ -51,7 +50,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     'pending' => 'Chờ pha',
     'preparing' => 'Đang pha',
     'completed' => 'Hoàn thành',
-    'served' => 'Đã phục vụ',
     'cancelled' => 'Đã hủy',
     _ => s,
   };
@@ -200,7 +198,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       {'key': 'pending', 'label': 'Chờ pha', 'icon': Icons.hourglass_empty},
       {'key': 'preparing', 'label': 'Đang pha', 'icon': Icons.local_cafe},
       {'key': 'completed', 'label': 'Xong', 'icon': Icons.check_circle_outline},
-      {'key': 'served', 'label': 'Đã phục vụ', 'icon': Icons.room_service},
     ];
     final currentIndex = _statusFlow.indexOf(_order['status']);
 
