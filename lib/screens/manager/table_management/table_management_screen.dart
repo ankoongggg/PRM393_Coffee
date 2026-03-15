@@ -13,9 +13,9 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   @override
   void initState() {
     super.initState();
-    // ✅ Fetch tables khi mở screen
+    // Bắt đầu lắng nghe Stream khi mở màn hình
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TableProvider>(context, listen: false).fetchTables();
+      Provider.of<TableProvider>(context, listen: false).startTableListener();
     });
   }
 
@@ -23,6 +23,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
     'available' => Colors.green,
     'occupied' => Colors.red,
     'reserved' => Colors.orange,
+    'waiting' => Colors.blue,
     _ => Colors.grey,
   };
 
@@ -30,6 +31,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
     'available' => Icons.event_seat,
     'occupied' => Icons.people,
     'reserved' => Icons.bookmark,
+    'waiting' => Icons.hourglass_empty,
     _ => Icons.table_bar,
   };
 
@@ -37,6 +39,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
     'available' => 'Trống',
     'occupied' => 'Đang dùng',
     'reserved' => 'Đã đặt',
+    'waiting' => 'Chờ món',
     _ => status,
   };
 
@@ -44,15 +47,12 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   Widget build(BuildContext context) {
     return Consumer<TableProvider>(
       builder: (context, tableProvider, child) {
-        if (tableProvider.isLoading) {
+        // Chỉ hiện loading ở lần đầu tiên khi chưa có dữ liệu
+        if (tableProvider.isLoading && tableProvider.tables.isEmpty) {
           return Scaffold(
             appBar: AppBar(
               backgroundColor: const Color(0xFF6F4E37),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: const Text('Quản lý Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: const Text('Quản lý Bàn', style: TextStyle(color: Colors.white)),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -74,7 +74,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.white),
-                onPressed: () => tableProvider.fetchTables(),
+                onPressed: () => tableProvider.startTableListener(),
               ),
             ],
           ),
@@ -87,6 +87,11 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           body: Column(
             children: [
               _buildStatusBar(availableCount, occupiedCount, tables.length),
+              if (tableProvider.error != null)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(tableProvider.error!, style: const TextStyle(color: Colors.red)),
+                ),
               Expanded(child: _buildTableGrid(tables)),
             ],
           ),
@@ -102,7 +107,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -111,7 +116,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           _divider(),
           _StatItem(value: '$available', label: 'Đang trống', color: Colors.green),
           _divider(),
-          _StatItem(value: '$occupied', label: 'Đang phục vụ', color: Colors.red),
+          _StatItem(value: '$occupied', label: 'Đang dùng', color: Colors.red),
         ],
       ),
     );
@@ -154,7 +159,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
+                      color: color.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(_statusIcon(statusString), color: color, size: 22),
@@ -189,7 +194,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(_statusLabel(statusString), style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
@@ -201,14 +206,15 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
     );
   }
 
-  void _showAddEditDialog(BuildContext context, {Map<String, dynamic>? table}) {
+  void _showAddEditDialog(BuildContext context, {dynamic table}) {
     final isEdit = table != null;
-    final numCtrl = TextEditingController(text: isEdit ? '${table['number']}' : '');
-    final capCtrl = TextEditingController(text: isEdit ? '${table['capacity']}' : '');
+    final numCtrl = TextEditingController(text: isEdit ? '${table.tableNumber}' : '');
+    final capCtrl = TextEditingController(text: isEdit ? '${table.capacity}' : '');
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(isEdit ? 'Chỉnh sửa bàn ${table['number']}' : 'Thêm bàn mới'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isEdit ? 'Chỉnh sửa bàn ${table.tableNumber}' : 'Thêm bàn mới'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -221,23 +227,31 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
             TextField(
               controller: capCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Sức chứa (chỗ ngồi)', prefixIcon: Icon(Icons.people_outline)),
+              decoration: const InputDecoration(labelText: 'Sức chứa', prefixIcon: Icon(Icons.people_outline)),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Hủy')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6F4E37)),
-            onPressed: () {
-              // TODO: TableProvider.addTable / updateTable
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(isEdit ? 'Đã cập nhật bàn!' : 'Đã thêm bàn mới!'),
-                  backgroundColor: const Color(0xFF6F4E37),
-                ),
-              );
+            onPressed: () async {
+              final number = int.tryParse(numCtrl.text) ?? 0;
+              final capacity = int.tryParse(capCtrl.text) ?? 0;
+
+              if (number > 0 && capacity > 0) {
+                final provider = Provider.of<TableProvider>(context, listen: false);
+                try {
+                  if (isEdit) {
+                    await provider.updateTable(table.id, number, capacity);
+                  } else {
+                    await provider.addTable(number, capacity);
+                  }
+                  Navigator.pop(dialogContext);
+                } catch (e) {
+                  // Lỗi sẽ được xử lý bởi rethrow trong provider
+                }
+              }
             },
             child: Text(isEdit ? 'Lưu' : 'Thêm', style: const TextStyle(color: Colors.white)),
           ),
@@ -249,16 +263,16 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   void _confirmDelete(BuildContext context, dynamic table) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Xóa Bàn ${table.tableNumber}?'),
         content: const Text('Bạn có chắc muốn xóa bàn này không?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Hủy')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              // TODO: TableProvider.deleteTable(table.id)
-              Navigator.pop(context);
+            onPressed: () async {
+              await Provider.of<TableProvider>(context, listen: false).deleteTable(table.id);
+              Navigator.pop(dialogContext);
             },
             child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
@@ -276,11 +290,10 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
-        ],
-      );
+    children: [
+      Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+      const SizedBox(height: 2),
+      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
+    ],
+  );
 }
-

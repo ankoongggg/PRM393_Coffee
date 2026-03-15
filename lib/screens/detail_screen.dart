@@ -103,7 +103,7 @@ class _DetailScreenState extends State<DetailScreen> {
           child: Image.network(
             widget.coffee.imageUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: AppColors.primaryLight,
               child: const Icon(Icons.coffee, size: 80, color: Colors.white),
             ),

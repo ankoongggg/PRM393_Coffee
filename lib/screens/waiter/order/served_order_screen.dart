@@ -169,7 +169,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                                         color: Colors.orange,
                                       ),
                                     ))
-                                .toList(),
+                                ,
                           ],
                         ),
                       ),
@@ -257,7 +257,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                               children: [
                                 const Text(''),
                                 Text(
-                                  _formatPrice(order.totalAmount) + 'đ',
+                                  '${_formatPrice(order.totalAmount)}đ',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -302,7 +302,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                                       ),
                                     ),
                                     Text(
-                                      _formatPrice(itemTotal) + 'đ',
+                                      '${_formatPrice(itemTotal)}đ',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
@@ -312,7 +312,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                                   ],
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),

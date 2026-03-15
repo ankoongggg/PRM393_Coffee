@@ -24,7 +24,7 @@ class ReportProvider extends ChangeNotifier {
   double _totalRevenueToday = 0;
   int _totalOrdersToday = 0;
   late ReportData _todayReport;
-  Map<String, double> _revenueByDay = {};
+  final Map<String, double> _revenueByDay = {};
   Map<String, int> _topSellingItems = {}; // item name => quantity sold
   bool _isLoading = false;
   String? _error;

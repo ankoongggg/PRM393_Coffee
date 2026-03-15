@@ -20,9 +20,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   void initState() {
     super.initState();
-    // ✅ Fetch orders khi mở screen
+    // ✅ Sử dụng Listener thay vì fetch lẻ để nhận data Real-time
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderProvider>(context, listen: false).fetchAllOrders();
+      Provider.of<OrderProvider>(context, listen: false).startOrderListener();
     });
   }
 
@@ -58,7 +58,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Widget build(BuildContext context) {
     return Consumer<OrderProvider>(
       builder: (context, orderProvider, child) {
-        if (orderProvider.isLoading) {
+        // Chỉ hiện loading xoay xoay khi danh sách thực sự trống
+        if (orderProvider.isLoading && orderProvider.orders.isEmpty) {
           return Scaffold(
             appBar: AppBar(
               backgroundColor: const Color(0xFF6F4E37),
@@ -86,7 +87,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.white),
-                onPressed: () => orderProvider.fetchAllOrders(),
+                // Nút refresh này sẽ kích hoạt lại listener nếu cần
+                onPressed: () => orderProvider.startOrderListener(),
               ),
             ],
           ),
@@ -94,6 +96,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
             children: [
               _buildFilterBar(),
               _buildSummaryRow(filteredOrders),
+              // Hiển thị lỗi nếu có
+              if (orderProvider.error != null)
+                Text(orderProvider.error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               Expanded(child: _buildOrderList(filteredOrders)),
             ],
           ),
@@ -102,6 +107,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
+  // ... (Các Widget con bên dưới giữ nguyên như cũ)
+
   Widget _buildFilterBar() {
     return SizedBox(
       height: 44,
@@ -109,7 +116,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: _filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final f = _filters[i];
           final selected = f == _selectedFilter;
@@ -146,7 +153,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
       ),
       child: Row(
         children: [
@@ -176,7 +183,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (_, i) => _buildOrderCard(orders[i]),
     );
   }
@@ -199,7 +206,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
+                  color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.receipt, color: statusColor),
@@ -211,12 +218,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
+                        // Rút gọn ID cho dễ nhìn nếu quá dài
+                        Text(order.id.toString().substring(0, 6).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.12),
+                            color: statusColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(_statusLabel(statusString), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w700)),

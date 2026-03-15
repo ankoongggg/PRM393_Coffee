@@ -65,7 +65,7 @@ class CoffeeCard extends StatelessWidget {
               height: isHorizontal ? 120 : 130,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 height: isHorizontal ? 120 : 130,
                 color: AppColors.primaryLight,
                 child: const Icon(Icons.coffee, size: 40, color: Colors.white),

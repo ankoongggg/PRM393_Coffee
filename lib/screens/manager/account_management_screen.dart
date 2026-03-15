@@ -107,7 +107,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: _roles.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final role = _roles[i];
           final selected = role == _selectedRole;
@@ -151,7 +151,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
       itemCount: _filtered.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (_, i) => _buildAccountCard(_filtered[i]),
     );
   }
@@ -291,7 +291,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
               ],
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Vai trò',
                   prefixIcon: Icon(Icons.badge_outlined),

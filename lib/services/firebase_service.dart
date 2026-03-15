@@ -20,18 +20,15 @@ class FirebaseService {
   // Orders
   // ─────────────────────────────────────────────────────────────
 
-  /// Lấy tất cả orders từ Firestore
   Future<List<OrderModel>> fetchAllOrders() async {
     try {
       final snapshot = await _firestore.collection('orders').get();
       return snapshot.docs.map((doc) => _orderFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch orders: $e');
       return [];
     }
   }
 
-  /// Lấy orders của 1 bàn
   Future<List<OrderModel>> fetchOrdersByTable(String tableId) async {
     try {
       final snapshot = await _firestore
@@ -40,12 +37,10 @@ class FirebaseService {
           .get();
       return snapshot.docs.map((doc) => _orderFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch orders by table: $e');
       return [];
     }
   }
 
-  /// Lấy orders đang chờ xử lý (pending)
   Future<List<OrderModel>> fetchPendingOrders() async {
     try {
       final snapshot = await _firestore
@@ -54,26 +49,10 @@ class FirebaseService {
           .get();
       return snapshot.docs.map((doc) => _orderFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch pending orders: $e');
       return [];
     }
   }
 
-  /// Lấy orders đang pha chế (preparing)
-  Future<List<OrderModel>> fetchPreparingOrders() async {
-    try {
-      final snapshot = await _firestore
-          .collection('orders')
-          .where('status', isEqualTo: 'preparing')
-          .get();
-      return snapshot.docs.map((doc) => _orderFromFirestore(doc)).toList();
-    } catch (e) {
-      print('❌ Lỗi fetch preparing orders: $e');
-      return [];
-    }
-  }
-
-  /// Tạo order mới
   Future<String> createOrder({
     required String tableId,
     required int tableNumber,
@@ -90,63 +69,83 @@ class FirebaseService {
         'waiterName': waiterName,
         'items': items
             .map((item) => {
-                  'menuItemId': item.menuItemId,
-                  'menuItemName': item.menuItemName,
-                  'unitPrice': item.unitPrice,
-                  'quantity': item.quantity,
-                  'note': item.note,
-                })
+          'menuItemId': item.menuItemId,
+          'menuItemName': item.menuItemName,
+          'unitPrice': item.unitPrice,
+          'quantity': item.quantity,
+          'note': item.note,
+        })
             .toList(),
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
         'totalAmount': totalAmount,
       });
-      print('✅ Order tạo thành công: ${docRef.id}');
       return docRef.id;
     } catch (e) {
-      print('❌ Lỗi tạo order: $e');
       rethrow;
     }
   }
 
-  /// Cập nhật trạng thái order
   Future<void> updateOrderStatus(String orderId, String status) async {
     try {
       await _firestore.collection('orders').doc(orderId).update({
         'status': status,
-        if (status == 'completed')
-          'completedAt': FieldValue.serverTimestamp(),
+        if (status == 'completed') 'completedAt': FieldValue.serverTimestamp(),
       });
-      print('✅ Cập nhật order $orderId thành $status');
     } catch (e) {
-      print('❌ Lỗi cập nhật order: $e');
       rethrow;
     }
+  }
+
+  Future<void> updateOrderItems(String orderId, List<OrderItemModel> newItems, double newTotal) async {
+    try {
+      await _firestore.collection('orders').doc(orderId).update({
+        'items': newItems.map((item) => {
+          'menuItemId': item.menuItemId,
+          'menuItemName': item.menuItemName,
+          'unitPrice': item.unitPrice,
+          'quantity': item.quantity,
+          'note': item.note,
+        }).toList(),
+        'totalAmount': newTotal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('❌ Lỗi cập nhật đơn hàng: $e');
+      rethrow;
+    }
+  }
+
+  Stream<List<OrderModel>> getOrdersStream() {
+    return _firestore
+        .collection('orders')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => _orderFromFirestore(doc)).toList());
   }
 
   // ─────────────────────────────────────────────────────────────
   // Menu Items
   // ─────────────────────────────────────────────────────────────
 
-  /// Lấy tất cả menu items
   Future<List<MenuItemModel>> fetchAllMenuItems() async {
     try {
-      print('🔍 Bắt đầu fetch menuItems...');
       final snapshot = await _firestore.collection('menuItems').get();
-      print('✅ Fetch ${snapshot.docs.length} menu items từ Firestore');
-      
-      for (var doc in snapshot.docs) {
-        print('📍 MenuItem - ID: ${doc.id}, Name: ${doc['name']}');
-      }
-      
       return snapshot.docs.map((doc) => _menuItemFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch menu items: $e');
       return [];
     }
   }
 
-  /// Lấy menu items có sẵn (isAvailable = true)
+  Stream<List<MenuItemModel>> getMenuItemsStream() {
+    return _firestore
+        .collection('menuItems')
+        .snapshots()
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => _menuItemFromFirestore(doc)).toList());
+  }
+
   Future<List<MenuItemModel>> fetchAvailableMenuItems() async {
     try {
       final snapshot = await _firestore
@@ -155,8 +154,31 @@ class FirebaseService {
           .get();
       return snapshot.docs.map((doc) => _menuItemFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch available menu items: $e');
       return [];
+    }
+  }
+
+  Future<void> addMenuItem(Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('menuItems').add(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateMenuItem(String id, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('menuItems').doc(id).update(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteMenuItem(String id) async {
+    try {
+      await _firestore.collection('menuItems').doc(id).delete();
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -164,106 +186,82 @@ class FirebaseService {
   // Tables
   // ─────────────────────────────────────────────────────────────
 
-  /// Lấy tất cả bàn
   Future<List<TableModel>> fetchAllTables() async {
     try {
-      print('🔍 Bắt đầu fetch tables...');
-      print('📍 Database app: ${_firestore.app.name}');
-      print('📍 Collection name: tables');
-      
       final snapshot = await _firestore.collection('tables').get();
-      print('✅ Fetch ${snapshot.docs.length} documents từ collection tables');
-      
-      if (snapshot.docs.isEmpty) {
-        print('⚠️ Collection tables trống! Kiểm tra Firestore Console');
-      }
-      
-      // Debug: kiểm tra dữ liệu chi tiết
-      for (var doc in snapshot.docs) {
-        print('📍 Bàn - ID: ${doc.id}');
-        print('   Data: ${doc.data()}');
-      }
-      
-      final tables = snapshot.docs.map((doc) => _tableFromFirestore(doc)).toList();
-      print('✅ Convert thành ${tables.length} TableModel');
-      
-      // List all table numbers
-      if (tables.isNotEmpty) {
-        final tableNumbers = tables.map((t) => t.tableNumber).toList();
-        print('📋 Table numbers: $tableNumbers');
-      }
-      
-      return tables;
-    } catch (e) {
-      print('❌ Lỗi fetch tables: $e');
-      print('🔧 Stack trace: ${StackTrace.current}');
-      return [];
-    }
-  }
-
-  /// Lấy bàn trống (available)
-  Future<List<TableModel>> fetchAvailableTables() async {
-    try {
-      final snapshot = await _firestore
-          .collection('tables')
-          .where('status', isEqualTo: 'available')
-          .get();
       return snapshot.docs.map((doc) => _tableFromFirestore(doc)).toList();
     } catch (e) {
-      print('❌ Lỗi fetch available tables: $e');
       return [];
     }
   }
 
-  /// Cập nhật trạng thái bàn
-  Future<void> updateTableStatus(
-    String tableId,
-    String status, {
-    String? currentOrderId,
-  }) async {
+  Stream<List<TableModel>> getTablesStream() {
+    return _firestore.collection('tables').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => _tableFromFirestore(doc)).toList());
+  }
+
+  Future<void> updateTableStatus(String tableId, String status,
+      {String? currentOrderId}) async {
     try {
       await _firestore.collection('tables').doc(tableId).update({
         'status': status,
         'currentOrderId': currentOrderId,
       });
-      print('✅ Cập nhật bàn $tableId: $status');
     } catch (e) {
-      print('❌ Lỗi cập nhật bàn: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> addTable(Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('tables').add(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateTable(String tableId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('tables').doc(tableId).update(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTable(String tableId) async {
+    try {
+      await _firestore.collection('tables').doc(tableId).delete();
+    } catch (e) {
       rethrow;
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Helpers - Convert Firestore Document → Models
+  // Helpers
   // ─────────────────────────────────────────────────────────────
 
   OrderModel _orderFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
-    
-    // Convert items array
     List<OrderItemModel> items = [];
     if (data['items'] is List) {
       items = (data['items'] as List)
           .map((item) => OrderItemModel(
-                menuItemId: item['menuItemId'] ?? '',
-                menuItemName: item['menuItemName'] ?? '',
-                unitPrice: (item['unitPrice'] ?? 0).toDouble(),
-                quantity: item['quantity'] ?? 1,
-                note: item['note'],
-              ))
+        menuItemId: item['menuItemId'] ?? '',
+        menuItemName: item['menuItemName'] ?? '',
+        unitPrice: (item['unitPrice'] ?? 0).toDouble(),
+        quantity: item['quantity'] ?? 1,
+        note: item['note'],
+      ))
           .toList();
     }
 
-    // Convert status string to enum
     OrderStatus status = OrderStatus.pending;
     try {
       status = OrderStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['status'],
+            (e) => e.toString().split('.').last == data['status'],
         orElse: () => OrderStatus.pending,
       );
-    } catch (e) {
-      print('⚠️ Status không hợp lệ: ${data['status']}');
-    }
+    } catch (_) {}
 
     return OrderModel(
       id: doc.id,
@@ -281,17 +279,13 @@ class FirebaseService {
 
   TableModel _tableFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
-
-    // Convert status string to enum
     TableStatus status = TableStatus.available;
     try {
       status = TableStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['status'],
+            (e) => e.toString().split('.').last == data['status'],
         orElse: () => TableStatus.available,
       );
-    } catch (e) {
-      print('⚠️ Table status không hợp lệ: ${data['status']}');
-    }
+    } catch (_) {}
 
     return TableModel(
       id: doc.id,
@@ -302,15 +296,25 @@ class FirebaseService {
     );
   }
 
-  MenuItemModel _menuItemFromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  MenuItemModel _menuItemFromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
+    double priceValue = 0;
+
+    if (data['price'] != null) {
+      if (data['price'] is String) {
+        priceValue = double.tryParse(data['price']) ?? 0;
+      } else if (data['price'] is num) {
+        priceValue = (data['price'] as num).toDouble();
+      }
+    }
 
     return MenuItemModel(
       id: doc.id,
       name: data['name'] ?? '',
       description: data['description'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
-      imageUrl: data['imageURL'] ?? data['imageUrl'] ?? '',
+      price: priceValue,
+      imageUrl: data['imageUrl'] ?? '',
       category: data['category'] ?? '',
       isAvailable: data['isAvailable'] ?? true,
     );

@@ -217,7 +217,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final cat = categories[i];
           final selected = cat == _selectedCategory;
@@ -324,7 +324,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 child: Image.network(
                   item.imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
+                  errorBuilder: (_, _, _) =>
                       const Center(child: Icon(Icons.local_cafe, size: 50, color: Color(0xFF2E7D32))),
                 ),
               )

@@ -4,6 +4,9 @@
 import 'package:flutter/material.dart';
 import '../core/enums/user_role.dart';
 import '../routes/app_routes.dart';
+import '../models/menu_item_model.dart';
+
+// Import Screens
 import '../screens/auth/login_screen.dart';
 import '../screens/manager/manager_dashboard.dart';
 import '../screens/manager/menu_management/menu_list_screen.dart';
@@ -30,12 +33,21 @@ class AppRouter {
       // ── Manager ──────────────────────────────────────────────
       case AppRoutes.managerDashboard:
         return MaterialPageRoute(builder: (_) => const ManagerDashboard());
+
       case AppRoutes.managerMenu:
         return MaterialPageRoute(builder: (_) => const MenuListScreen());
+
       case AppRoutes.managerMenuAdd:
         return MaterialPageRoute(builder: (_) => const AddEditMenuItemScreen());
+
       case AppRoutes.managerMenuEdit:
-        return MaterialPageRoute(builder: (_) => const AddEditMenuItemScreen());
+        final item = settings.arguments as MenuItemModel;
+
+        return MaterialPageRoute(
+          builder: (_) => AddEditMenuItemScreen(
+            menuItem: item,
+          ),
+        );
       case AppRoutes.managerTables:
         return MaterialPageRoute(builder: (_) => const TableManagementScreen());
       case AppRoutes.managerOrders:

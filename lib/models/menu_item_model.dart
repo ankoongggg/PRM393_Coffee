@@ -16,4 +16,15 @@ class MenuItemModel {
     required this.category,
     this.isAvailable = true,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'description': description,
+      'price': price,
+      'imageUrl': imageUrl,
+      'category': category,
+      'isAvailable': isAvailable,
+    };
+  }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/order_provider.dart';
 import '../../core/enums/order_status.dart';
+import '../../models/order_model.dart';
+import '../../models/order_item_model.dart';
 
 class OrderQueueScreen extends StatefulWidget {
   const OrderQueueScreen({super.key});
@@ -17,10 +19,8 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
-    // ✅ Fetch pending & preparing orders khi mở screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<OrderProvider>(context, listen: false).fetchAllOrders();
+      Provider.of<OrderProvider>(context, listen: false).startOrderListener();
     });
   }
 
@@ -30,35 +30,42 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     super.dispose();
   }
 
-  void _startPreparing(String orderId) async {
+  // ✅ Hàm tích chọn từng món
+  void _toggleItemDone(OrderModel order, int itemIndex) async {
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    List<OrderItemModel> updatedItems = List.from(order.items);
+    updatedItems[itemIndex].isDone = !updatedItems[itemIndex].isDone;
+
     try {
-      // Update status to "preparing"
-      await orderProvider.updateOrderStatus(orderId, OrderStatus.preparing);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('🔄 Bắt đầu pha $orderId'), backgroundColor: Colors.blue),
-      );
+      await orderProvider.updateOrderItems(order.id, updatedItems);
+
+      // Tự động chuyển sang Hoàn thành nếu đã tích hết món khi đang ở tab "Pha"
+      if (order.status == OrderStatus.preparing && updatedItems.every((item) => item.isDone)) {
+        _updateOrderStatus(order.id, OrderStatus.completed, 'Đã xong toàn bộ món!', Colors.green);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
-  void _completeOrder(String orderId) async {
+  // ✅ Hàm cập nhật trạng thái đơn hàng (Bấm nút)
+  void _updateOrderStatus(String orderId, OrderStatus newStatus, String message, Color color) async {
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
     try {
-      // Update status to "completed"
-      await orderProvider.updateOrderStatus(orderId, OrderStatus.completed);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ Hoàn thành $orderId – Thông báo Waiter!'), backgroundColor: const Color(0xFF2E7D32)),
-      );
+      await orderProvider.updateOrderStatus(orderId, newStatus);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: color, behavior: SnackBarBehavior.floating),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red));
+      }
     }
   }
 
@@ -66,21 +73,12 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Consumer<OrderProvider>(
       builder: (context, orderProvider, child) {
-        if (orderProvider.isLoading) {
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF1565C0),
-              title: const Text('Hàng đợi pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
+        final allOrders = orderProvider.orders;
 
-        final pendingOrders = orderProvider.pendingOrders;
-        final preparingOrders = orderProvider.preparingOrders;
-        final completedOrders = orderProvider.orders
-            .where((o) => o.status == OrderStatus.completed)
-            .toList();
+        // SỬA LẠI LOGIC LỌC: Chỉ lọc theo Status của Order
+        final pendingOrders = allOrders.where((o) => o.status == OrderStatus.pending).toList();
+        final preparingOrders = allOrders.where((o) => o.status == OrderStatus.preparing).toList();
+        final completedOrders = allOrders.where((o) => o.status == OrderStatus.completed).toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFF0F4FF),
@@ -97,18 +95,18 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white60,
               tabs: [
-                Tab(child: Text('⏳ Chờ (${pendingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
-                Tab(child: Text('🔄 Đang pha (${preparingOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
-                Tab(child: Text('✅ Đã hoàn thành (${completedOrders.length})', style: const TextStyle(fontWeight: FontWeight.bold))),
+                Tab(text: '⏳ Chờ (${pendingOrders.length})'),
+                Tab(text: '🔄 Pha (${preparingOrders.length})'),
+                Tab(text: '✅ Xong (${completedOrders.length})'),
               ],
             ),
           ),
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildOrderList(pendingOrders, 'pending'),
-              _buildOrderList(preparingOrders, 'preparing'),
-              _buildOrderList(completedOrders, 'completed'),
+              _buildOrderList(pendingOrders, OrderStatus.pending),
+              _buildOrderList(preparingOrders, OrderStatus.preparing),
+              _buildOrderList(completedOrders, OrderStatus.completed),
             ],
           ),
         );
@@ -116,137 +114,145 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildOrderList(List orders, String status) {
-    String emptyText = 'Không có dữ liệu';
-    IconData emptyIcon = Icons.inbox;
-    
-    if (status == 'pending') {
-      emptyText = 'Không có đơn chờ';
-      emptyIcon = Icons.hourglass_empty;
-    } else if (status == 'preparing') {
-      emptyText = 'Không có đơn đang pha';
-      emptyIcon = Icons.local_cafe;
-    } else if (status == 'completed') {
-      emptyText = 'Không có đơn hoàn thành';
-      emptyIcon = Icons.check_circle;
-    }
-    
-    return orders.isEmpty
-        ? Center(
+  Widget _buildOrderList(List<OrderModel> orders, OrderStatus status) {
+    if (orders.isEmpty) return _buildEmptyState(status);
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: orders.length,
+      itemBuilder: (_, i) => _buildOrderCard(orders[i], status),
+    );
+  }
+
+  Widget _buildOrderCard(OrderModel order, OrderStatus status) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Column(
+        children: [
+          _buildCardHeader(order, status),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(emptyIcon, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text(
-                  emptyText,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          )
-        : ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: orders.length,
-            itemBuilder: (_, i) {
-              final order = orders[i];
-              
-              String statusLabel = '⏳ Chờ';
-              Color statusColor = Colors.orange;
-              
-              if (status == 'preparing') {
-                statusLabel = '🔄 Pha';
-                statusColor = Colors.blue;
-              } else if (status == 'completed') {
-                statusLabel = '✅ Hoàn thành';
-                statusColor = Colors.green;
-              }
-              
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('📋 ${order.id}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text('Bàn ${order.tableNumber} - ${order.waiterName}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              statusLabel,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                          ),
-                        ],
+                // ✅ ĐÃ XÓA CHECKBOX - CHỈ HIỂN THỊ DANH SÁCH MÓN
+                ...order.items.map((item) {
+                  return ListTile(
+                    dense: true, // Làm cho dòng gọn hơn
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 12),
-                      // Items list
-                      ...order.items.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text('• ${item.menuItemName}', style: const TextStyle(fontSize: 13)),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text('×${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            ),
-                          ],
+                      child: Text(
+                        '${item.quantity}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
                         ),
-                      )),
-                      if (order.items.isNotEmpty) const SizedBox(height: 12),
-                      // Action buttons
-                      if (status == 'pending')
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1565C0),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            onPressed: () => _startPreparing(order.id),
-                            child: const Text('Bắt đầu pha chế', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        )
-                      else if (status == 'preparing')
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E7D32),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            onPressed: () => _completeOrder(order.id),
-                            child: const Text('✅ Hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      // For completed orders, show a read-only view (no action button)
+                      ),
+                    ),
+                    title: Text(
+                      item.menuItemName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    // Hiển thị note nếu có
+                    subtitle: item.note != null && item.note!.isNotEmpty
+                        ? Text('Ghi chú: ${item.note}', style: const TextStyle(color: Colors.red, fontSize: 12))
+                        : null,
+                  );
+                }),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Bàn ${order.tableNumber}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1565C0)),
+                      ),
+                      _buildActionButton(order, status),
                     ],
                   ),
                 ),
-              );
-            },
-          );
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardHeader(OrderModel order, OrderStatus status) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _getStatusColor(status).withValues(alpha: 0.1),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('📋 #${order.id.substring(order.id.length > 5 ? order.id.length - 5 : 0)}',
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text('Waiter: ${order.waiterName}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(OrderModel order, OrderStatus status) {
+    // Nút tại tab CHỜ
+    if (status == OrderStatus.pending) {
+      return ElevatedButton.icon(
+        icon: const Icon(Icons.play_arrow, color: Colors.white),
+        label: const Text('BẮT ĐẦU PHA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700]),
+        onPressed: () => _updateOrderStatus(order.id, OrderStatus.preparing, 'Đã chuyển sang Đang pha', Colors.blue),
+      );
+    }
+
+    // Nút tại tab ĐANG PHA
+    if (status == OrderStatus.preparing) {
+      bool allDone = order.items.every((item) => item.isDone);
+      return ElevatedButton.icon(
+        icon: const Icon(Icons.check, color: Colors.white),
+        label: const Text('HOÀN THÀNH', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        // Nút HOÀN THÀNH chỉ hiện rõ khi đã tích hết món, nếu chưa tích hết sẽ bị mờ nhẹ nhưng vẫn cho bấm nếu bạn muốn
+        style: ElevatedButton.styleFrom(
+          backgroundColor: allDone ? Colors.green[700] : Colors.grey,
+        ),
+        onPressed: () => _updateOrderStatus(order.id, OrderStatus.completed, 'Đơn hàng đã hoàn thành!', Colors.green),
+      );
+    }
+
+    return const Icon(Icons.check_circle, color: Colors.green);
+  }
+
+  Widget _buildEmptyState(OrderStatus status) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.local_cafe_outlined, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text('Hiện tại không có đơn hàng nào', style: TextStyle(color: Colors.grey[400])),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending: return Colors.orange;
+      case OrderStatus.preparing: return Colors.blue;
+      case OrderStatus.completed: return Colors.green;
+      default: return Colors.grey;
+    }
   }
 }

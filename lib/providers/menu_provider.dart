@@ -1,20 +1,45 @@
 // TODO: Implement MenuProvider
 // Chịu trách nhiệm: CRUD menu items (Manager)
 
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/menu_item_model.dart';
 import '../services/firebase_service.dart';
 
 class MenuProvider extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
-  
+
   List<MenuItemModel> _menuItems = [];
   bool _isLoading = false;
   String? _error;
+  StreamSubscription? _menuSubscription;
 
   List<MenuItemModel> get menuItems => List.unmodifiable(_menuItems);
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  MenuProvider() {
+    startMenuListener();
+  }
+
+  void startMenuListener() {
+    _menuSubscription?.cancel();
+    _setLoading(true);
+
+    _menuSubscription = _firebaseService.getMenuItemsStream().listen(
+          (newList) {
+        _menuItems = newList;
+        _error = null;
+        _setLoading(false);
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = 'Lỗi stream menu: $e';
+        _setLoading(false);
+        notifyListeners();
+      },
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────
   // FETCH MENU ITEMS
@@ -75,8 +100,8 @@ class MenuProvider extends ChangeNotifier {
   List<MenuItemModel> searchMenuItems(String query) {
     return _menuItems
         .where((item) =>
-            item.name.toLowerCase().contains(query.toLowerCase()) ||
-            item.description.toLowerCase().contains(query.toLowerCase()))
+    item.name.toLowerCase().contains(query.toLowerCase()) ||
+        item.description.toLowerCase().contains(query.toLowerCase()))
         .toList();
   }
 
@@ -87,36 +112,39 @@ class MenuProvider extends ChangeNotifier {
   /// Thêm menu item mới (Manager)
   Future<void> addMenuItem(MenuItemModel item) async {
     try {
-      // TODO: Implement add to Firestore
-      print('TODO: Add menu item to Firestore');
-      await fetchMenuItems();
+      // Bạn cần đảm bảo đã thêm hàm addMenuItem vào FirebaseService
+      await _firebaseService.addMenuItem(item.toMap());
+      print('✅ Thêm món ${item.name} thành công');
     } catch (e) {
       _error = 'Lỗi thêm menu item: $e';
       print('❌ $_error');
+      rethrow;
     }
   }
 
   /// Sửa menu item (Manager)
   Future<void> updateMenuItem(MenuItemModel item) async {
     try {
-      // TODO: Implement update in Firestore
-      print('TODO: Update menu item in Firestore');
-      await fetchMenuItems();
+      // Bạn cần đảm bảo đã thêm hàm updateMenuItem vào FirebaseService
+      await _firebaseService.updateMenuItem(item.id, item.toMap());
+      print('✅ Cập nhật món ${item.name} thành công');
     } catch (e) {
       _error = 'Lỗi sửa menu item: $e';
       print('❌ $_error');
+      rethrow;
     }
   }
 
   /// Xóa menu item (Manager)
   Future<void> deleteMenuItem(String id) async {
     try {
-      // TODO: Implement delete from Firestore
-      print('TODO: Delete menu item from Firestore');
-      await fetchMenuItems();
+      // Bạn cần đảm bảo đã thêm hàm deleteMenuItem vào FirebaseService
+      await _firebaseService.deleteMenuItem(id);
+      print('✅ Xóa món thành công');
     } catch (e) {
       _error = 'Lỗi xóa menu item: $e';
       print('❌ $_error');
+      rethrow;
     }
   }
 
@@ -127,5 +155,11 @@ class MenuProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _menuSubscription?.cancel();
+    super.dispose();
   }
 }
