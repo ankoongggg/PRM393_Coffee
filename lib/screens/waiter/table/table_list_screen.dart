@@ -176,7 +176,10 @@ class _TableListScreenState extends State<TableListScreen> {
   }
 
   Widget _buildGrid(List tables) {
-    // ✅ Nhận tables từ parameter (từ TableProvider)
+    // ✅ Sắp xếp tables theo thứ tự bàn (1, 2, 3, ...)
+    final sortedTables = [...tables];
+    sortedTables.sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
+    
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -185,8 +188,8 @@ class _TableListScreenState extends State<TableListScreen> {
         mainAxisSpacing: 12,
         childAspectRatio: 1.1,
       ),
-      itemCount: tables.length,
-      itemBuilder: (_, i) => _buildTableCard(tables[i]),
+      itemCount: sortedTables.length,
+      itemBuilder: (_, i) => _buildTableCard(sortedTables[i]),
     );
   }
 

@@ -56,8 +56,32 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
       setState(() => _isProcessing = true);
 
       try {
+        final orderProvider =
+            Provider.of<OrderProvider>(context, listen: false);
         final tableProvider =
             Provider.of<TableProvider>(context, listen: false);
+        
+        // Lấy order hiện tại để cập nhật
+        final tableOrders = orderProvider.ordersByTable(widget.tableId);
+        final completedOrders = tableOrders
+            .where((o) => o.status == OrderStatus.completed)
+            .toList();
+        
+        if (completedOrders.isNotEmpty) {
+          final currentOrder = completedOrders.first;
+          
+          // ✅ Cập nhật order status thành "served"
+          await orderProvider.updateOrderStatus(
+            currentOrder.id,
+            OrderStatus.served,
+          );
+          
+          // Refresh data để Manager thấy order đã phục vụ
+          await Future.delayed(const Duration(milliseconds: 500));
+          orderProvider.startOrderListener();
+        }
+        
+        // Sau đó reset table thành available
         await tableProvider.setTableAvailable(widget.tableId);
 
         if (mounted) {
@@ -180,13 +204,11 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
           );
         }
 
-        // Tính tổng tiền từ tất cả các order hoàn thành
-        double totalAmount = 0;
-        int totalItems = 0;
-        for (var order in completedOrders) {
-          totalAmount += order.totalAmount;
-          totalItems += order.items.length;
-        }
+        // Tính tổng tiền từ order hoàn thành đầu tiên (hiện tại)
+        final currentOrder = completedOrders.first;
+        
+        double totalAmount = currentOrder.totalAmount;
+        int totalItems = currentOrder.items.length;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF0F9F0),
@@ -209,9 +231,9 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  itemCount: completedOrders.length,
+                  itemCount: 1,  // Chỉ hiển thị 1 order (order hiện tại)
                   itemBuilder: (_, orderIndex) {
-                    final order = completedOrders[orderIndex];
+                    final order = currentOrder;
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: Padding(
@@ -224,7 +246,7 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Đơn #${orderIndex + 1}',
+                                  'Đơn #1',  // Luôn là đơn #1 vì chỉ hiển thị order hiện tại
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,

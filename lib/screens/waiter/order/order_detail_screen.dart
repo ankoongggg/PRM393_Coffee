@@ -196,69 +196,136 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       ),
       body: Consumer<OrderProvider>(
         builder: (context, orderProvider, _) {
-          // Lấy order hiện tại từ provider (real-time updates)
+          // Chỉ hiển thị order hiện tại (1 lần đặt hàng duy nhất)
           final currentOrder = orderProvider.orders.firstWhere(
             (o) => o.id == widget.order.id,
             orElse: () => widget.order,
           );
+          
+          // Wrap vào list để hiển thị như 1 order
+          final tableOrders = [currentOrder];
 
           return Column(
             children: [
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  itemCount: currentOrder.items.length,
+                  itemCount: tableOrders.length,
                   itemBuilder: (_, i) {
-                    final item = currentOrder.items[i];
-                    final itemTotal = item.subtotal;
+                    final order = tableOrders[i];
+                    final orderTotal = order.items.fold<double>(
+                      0,
+                      (sum, item) => sum + item.subtotal,
+                    );
+
+                    // Determine status label and color
+                    String statusLabel = '';
+                    Color statusColor = Colors.grey;
+                    if (order.status == OrderStatus.pending) {
+                      statusLabel = 'Chờ';
+                      statusColor = Colors.orange;
+                    } else if (order.status == OrderStatus.preparing) {
+                      statusLabel = 'Đang pha';
+                      statusColor = Colors.blue;
+                    } else if (order.status == OrderStatus.completed) {
+                      statusLabel = 'Hoàn thành';
+                      statusColor = Colors.green;
+                    }
 
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 3,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Item info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.menuItemName,
+                            // Order header with ID and status
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Đơn #${(i + 1).toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: statusColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    statusLabel,
                                     style: const TextStyle(
+                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                      fontSize: 12,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 12),
+                            // Items in this order
+                            ...order.items.map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.menuItemName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${_formatPrice(item.unitPrice)}đ × ${item.quantity}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                   Text(
-                                    '${_formatPrice(item.unitPrice)}đ × ${item.quantity} = ${_formatPrice(itemTotal)}đ',
+                                    '${_formatPrice(item.subtotal)}đ',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
                                       color: Color(0xFF2E7D32),
-                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            // Quantity badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2E7D32),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '×${item.quantity}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                            )),
+                            // Order total
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${_formatPrice(orderTotal)}đ',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -282,7 +349,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Tổng: ${currentOrder.items.length} món',
+                          'Tổng: ${tableOrders.fold<int>(0, (sum, o) => sum + o.items.length)} món',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -290,7 +357,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           ),
                         ),
                         Text(
-                          '${_formatPrice(currentOrder.items.fold<double>(0, (sum, item) => sum + item.subtotal))}đ',
+                          '${_formatPrice(tableOrders.fold<double>(0, (sum, o) => sum + o.items.fold<double>(0, (s, item) => s + item.subtotal)))}đ',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -362,21 +429,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             ),
                             icon: Icon(
                               Icons.check_circle_outline,
-                              color: currentOrder.status == OrderStatus.completed
+                              color: tableOrders.every((o) => o.status == OrderStatus.completed)
                                   ? const Color(0xFF2E7D32)
                                   : Colors.grey,
                             ),
                             label: Text(
                               'Đã phục vụ',
                               style: TextStyle(
-                                color: currentOrder.status == OrderStatus.completed
+                                color: tableOrders.every((o) => o.status == OrderStatus.completed)
                                     ? const Color(0xFF2E7D32)
                                     : Colors.grey,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            // Chỉ enable khi order đã hoàn thành
-                            onPressed: (currentOrder.status == OrderStatus.completed && !_isProcessing)
+                            // Chỉ enable khi TẤT CẢ orders đã hoàn thành
+                            onPressed: (tableOrders.isNotEmpty && tableOrders.every((o) => o.status == OrderStatus.completed) && !_isProcessing)
                                 ? _onServed
                                 : null,
                           ),
