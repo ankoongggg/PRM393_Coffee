@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/table_provider.dart';
+import 'table_orders_screen.dart';
 
 class TableManagementScreen extends StatefulWidget {
   const TableManagementScreen({super.key});
@@ -147,7 +148,16 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _showAddEditDialog(context, table: table),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TableOrdersScreen(
+              tableId: table.id,
+              tableNumber: table.tableNumber,
+              capacity: table.capacity,
+            ),
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
