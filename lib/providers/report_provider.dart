@@ -42,25 +42,21 @@ class ReportProvider extends ChangeNotifier {
   // REPORT METHODS
   // ─────────────────────────────────────────────────────────────
 
-  /// Lấy báo cáo hôm nay (Manager)
+  /// Lấy báo cáo tổng tất cả đơn hàng (Manager)
   Future<void> fetchTodayReport() async {
     _setLoading(true);
     try {
       final allOrders = await _firebaseService.fetchAllOrders();
       final today = DateTime.now();
-      final startOfDay = DateTime(today.year, today.month, today.day);
-      final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
 
-      // Lọc orders hôm nay và đã hoàn thành
-      final todayOrders = allOrders.where((order) {
-        final isToday = order.createdAt.isAfter(startOfDay) && order.createdAt.isBefore(endOfDay);
-        final isCompleted = order.status == OrderStatus.completed || order.status == OrderStatus.served;
-        return isToday && isCompleted;
+      // Lọc tất cả orders đã hoàn thành (không lọc theo ngày)
+      final completedOrders = allOrders.where((order) {
+        return order.status == OrderStatus.completed || order.status == OrderStatus.served;
       }).toList();
 
-      // Tính tổng doanh thu
-      _totalRevenueToday = todayOrders.fold<double>(0, (sum, order) => sum + order.totalAmount);
-      _totalOrdersToday = todayOrders.length;
+      // Tính tổng doanh thu tất cả đơn
+      _totalRevenueToday = completedOrders.fold<double>(0, (sum, order) => sum + order.totalAmount);
+      _totalOrdersToday = completedOrders.length;
 
       // Tạo ReportData
       _todayReport = ReportData(
@@ -71,7 +67,7 @@ class ReportProvider extends ChangeNotifier {
       );
 
       _error = null;
-      print('✅ Báo cáo hôm nay: ${_todayReport.totalOrders} đơn, ${_todayReport.totalRevenue.toStringAsFixed(0)}đ');
+      print('✅ Báo cáo tổng: ${_todayReport.totalOrders} đơn, ${_todayReport.totalRevenue.toStringAsFixed(0)}đ');
     } catch (e) {
       _error = 'Lỗi fetch báo cáo: $e';
       print('❌ $_error');

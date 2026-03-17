@@ -93,20 +93,18 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Widget _buildDateLabel(ReportData report) {
-    final now = DateTime.now();
-    final dayName = _getDayName(now.weekday);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFD4A864).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.today, size: 14, color: Color(0xFF6F4E37)),
-          const SizedBox(width: 6),
-          Text('Hôm nay - $dayName', style: const TextStyle(fontSize: 12, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          Icon(Icons.assessment, size: 14, color: Color(0xFF6F4E37)),
+          SizedBox(width: 6),
+          Text('Tổng tất cả đơn hàng', style: TextStyle(fontSize: 12, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
         ],
       ),
     );
