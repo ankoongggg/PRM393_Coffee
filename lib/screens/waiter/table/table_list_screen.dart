@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../providers/table_provider.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../core/enums/order_status.dart';
+import '../../../models/order_model.dart';
 import '../../../routes/app_routes.dart';
 import '../../waiter/order/create_order_screen.dart';
 import '../../waiter/order/order_detail_screen.dart';
@@ -16,12 +18,13 @@ class TableListScreen extends StatefulWidget {
 }
 
 class _TableListScreenState extends State<TableListScreen> {
-  // Theme colors based on the HTML template
+  // Theme colors
   static const _bgWarm = Color(0xFFFDF8F6);
   static const _coffee100 = Color(0xFFF2E8E5);
   static const _coffee200 = Color(0xFFEADDD7);
   static const _coffee600 = Color(0xFF8C634F);
   static const _coffee900 = Color(0xFF4A332D);
+  static const _waiterAccent = Color(0xFFE67E22);
 
   // Status colors
   static const _emptyColor = Color(0xFF10B981);
@@ -39,13 +42,167 @@ class _TableListScreenState extends State<TableListScreen> {
   static const _servingLabelBg = Color(0xFFFEE2E2);
   static const _servingLabelText = Color(0xFFB91C1C);
 
+  // ── NOTIFICATION STATE ──
+  final List<_WaiterNotification> _notifications = [];
+  Set<String> _prevCompletedBatchIds = {};
+  Set<String> _prevPendingBatchIds = {};
+  bool _isFirstLoad = true;
+
+  int get _unreadCount => _notifications.where((n) => !n.isRead).length;
+
   @override
   void initState() {
     super.initState();
-    // Fetch tables từ Firebase khi mở screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TableProvider>(context, listen: false).fetchTables();
+      Provider.of<OrderProvider>(context, listen: false).startOrderListener();
     });
+  }
+
+  // ── NOTIFICATION DETECTION ──
+  void _checkNotifications(List<OrderModel> orders) {
+    final completedBatchIds = <String>{};
+    final pendingBatchIds = <String>{};
+
+    for (final o in orders) {
+      if (o.status == OrderStatus.cancelled) continue;
+      final batchKeys = o.items.map((i) => i.batchId.isEmpty ? 'initial' : i.batchId).toSet();
+      for (final b in batchKeys) {
+        final status = o.batchStatus[b] ?? OrderStatus.pending;
+        final id = '${o.id}_$b';
+        if (status == OrderStatus.completed) completedBatchIds.add(id);
+        if (status == OrderStatus.pending) pendingBatchIds.add(id);
+      }
+    }
+
+    if (_isFirstLoad) {
+      _prevCompletedBatchIds = completedBatchIds;
+      _prevPendingBatchIds = pendingBatchIds;
+      _isFirstLoad = false;
+      return;
+    }
+
+    // Batch mới completed = Barista pha xong
+    final newCompleted = completedBatchIds.difference(_prevCompletedBatchIds);
+    for (final id in newCompleted) {
+      final orderId = id.split('_').first;
+      final order = orders.firstWhere((o) => o.id == orderId, orElse: () => orders.first);
+      _notifications.insert(0, _WaiterNotification(
+        type: _WNotifType.baristaCompleted,
+        message: 'Barista đã pha xong đơn Bàn ${order.tableNumber}',
+        time: DateTime.now(),
+      ));
+    }
+
+    // Đơn pending mới = đã gửi thành công
+    final newPending = pendingBatchIds.difference(_prevPendingBatchIds);
+    for (final id in newPending) {
+      final orderId = id.split('_').first;
+      final order = orders.firstWhere((o) => o.id == orderId, orElse: () => orders.first);
+      _notifications.insert(0, _WaiterNotification(
+        type: _WNotifType.orderSent,
+        message: 'Đơn Bàn ${order.tableNumber} đã gửi cho Barista',
+        time: DateTime.now(),
+      ));
+    }
+
+    if (_notifications.length > 50) _notifications.removeRange(50, _notifications.length);
+    _prevCompletedBatchIds = completedBatchIds;
+    _prevPendingBatchIds = pendingBatchIds;
+  }
+
+  void _showNotificationPopup() {
+    setState(() {
+      for (final n in _notifications) { n.isRead = true; }
+    });
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (_) => Align(
+        alignment: Alignment.topRight,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 56, right: 8),
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 340,
+              constraints: const BoxConstraints(maxHeight: 400),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8))],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: const BoxDecoration(color: _waiterAccent, borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('🔔 Thông báo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text('${_notifications.length} mục', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: _notifications.isEmpty
+                        ? const Padding(padding: EdgeInsets.all(32), child: Text('Chưa có thông báo', style: TextStyle(color: Colors.grey)))
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: _notifications.length,
+                            separatorBuilder: (_, __) => Divider(height: 1, indent: 56, color: Colors.grey[100]),
+                            itemBuilder: (_, i) {
+                              final n = _notifications[i];
+                              final isSent = n.type == _WNotifType.orderSent;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36, height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isSent ? _waiterAccent.withValues(alpha: 0.1) : const Color(0xFF10B981).withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        isSent ? Icons.send_rounded : Icons.check_circle_rounded,
+                                        color: isSent ? _waiterAccent : const Color(0xFF10B981),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(n.message, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                        Text(_timeAgo(n.time), style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                                      ],
+                                    )),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inSeconds < 60) return 'Vừa xong';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
+    if (diff.inHours < 24) return '${diff.inHours} giờ trước';
+    return '${diff.inDays} ngày trước';
   }
 
   void _onTableTap(Map<String, dynamic> table) {
@@ -88,6 +245,14 @@ class _TableListScreenState extends State<TableListScreen> {
         final available = tables.where((t) => t.status.toString().split('.').last == 'available').length;
         final occupied = tables.where((t) => t.status.toString().split('.').last == 'occupied').length;
         final waiting = tables.where((t) => t.status.toString().split('.').last == 'waiting').length;
+
+        // Detect notifications
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final prevCount = _unreadCount;
+          _checkNotifications(orderProvider.orders);
+          if (_unreadCount != prevCount) setState(() {});
+        });
 
         if (tableProvider.isLoading) {
           return const Scaffold(
@@ -152,46 +317,80 @@ class _TableListScreenState extends State<TableListScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: _coffee100)),
+        border: const Border(bottom: BorderSide(color: _coffee100)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Left: avatar + name
           Row(
             children: [
-              // Avatar
               Container(
-                width: 44,
-                height: 44,
+                width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: _coffee200,
+                  color: _waiterAccent.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
-                  border: Border.all(color: _coffee100, width: 2),
+                  border: Border.all(color: _waiterAccent.withValues(alpha: 0.2), width: 2),
                 ),
-                child: const Icon(Icons.person_rounded, color: _coffee600, size: 24),
+                child: const Icon(Icons.restaurant_menu_rounded, color: _waiterAccent, size: 20),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'NHÂN VIÊN PHỤC VỤ',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5),
-                  ),
-                  Text(
-                    userName,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900),
-                  ),
+                  const Text('WAITER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _waiterAccent, letterSpacing: 0.5)),
+                  Text(userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900)),
                 ],
               ),
             ],
           ),
-          // Nút Đăng xuất
-          IconButton(
-            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-            icon: const Icon(Icons.logout_rounded, color: Colors.grey),
+          // Right: bell + logout
+          Row(
+            children: [
+              // Bell
+              GestureDetector(
+                onTap: _showNotificationPopup,
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.grey[50], shape: BoxShape.circle),
+                      child: const Icon(Icons.notifications_outlined, color: _coffee600, size: 22),
+                    ),
+                    if (_unreadCount > 0)
+                      Positioned(
+                        right: 2, top: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.red, shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          child: Text(
+                            _unreadCount > 9 ? '9+' : '$_unreadCount',
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Logout
+              GestureDetector(
+                onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.grey[50], shape: BoxShape.circle),
+                  child: const Icon(Icons.logout_rounded, color: _coffee600, size: 20),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -255,7 +454,7 @@ class _TableListScreenState extends State<TableListScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.9, // Adjust height
+        childAspectRatio: 0.9,
       ),
       itemCount: sortedTables.length,
       itemBuilder: (_, i) => _buildTableCard(sortedTables[i]),
@@ -306,7 +505,6 @@ class _TableListScreenState extends State<TableListScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top row: Label & capacity
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -322,20 +520,17 @@ class _TableListScreenState extends State<TableListScreen> {
                 ],
               ),
               const Spacer(),
-              // Icon Circle
               Container(
                 width: 60, height: 60,
                 decoration: BoxDecoration(color: bgLight, shape: BoxShape.circle),
                 child: Icon(iconData, size: 28, color: themeColor),
               ),
               const SizedBox(height: 12),
-              // Table Name
               Text(
                 'Bàn ${tableModel.tableNumber.toString().padLeft(2, '0')}',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _coffee900),
               ),
               const SizedBox(height: 4),
-              // Sub text
               Text(
                 subText,
                 style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey[400]),
@@ -350,5 +545,15 @@ class _TableListScreenState extends State<TableListScreen> {
       ),
     );
   }
+}
 
+// ── NOTIFICATION MODEL ──
+enum _WNotifType { orderSent, baristaCompleted }
+
+class _WaiterNotification {
+  final _WNotifType type;
+  final String message;
+  final DateTime time;
+  bool isRead;
+  _WaiterNotification({required this.type, required this.message, required this.time, this.isRead = false});
 }
