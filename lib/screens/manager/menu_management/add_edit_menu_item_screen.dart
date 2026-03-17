@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import '../../../models/menu_item_model.dart';
 import '../../../providers/menu_provider.dart';
+import '../../../services/firebase_service.dart';
 
 class AddEditMenuItemScreen extends StatefulWidget {
   final MenuItemModel? menuItem;
@@ -18,10 +20,12 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _priceCtrl = TextEditingController();
-  final _imageCtrl = TextEditingController();
+  final _imageCtrl = TextEditingController(); // giữ để hiển thị URL hiện tại (read-only)
   String _selectedCategory = 'Espresso';
   bool _isAvailable = true;
-  File? _imageFile;
+  XFile? _pickedXFile;
+  Uint8List? _pickedBytes;
+  bool _isUploading = false;
 
   bool get _isEdit => widget.menuItem != null;
   final List<String> _categories = [
@@ -71,9 +75,10 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageCtrl.text = pickedFile.path;
+        _pickedXFile = pickedFile;
+        _pickedBytes = bytes;
       });
     }
   }
@@ -132,7 +137,21 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
               ]),
               const SizedBox(height: 16),
               _buildSection('Ảnh', [
-                _buildTextField(_imageCtrl, 'URL hoặc đường dẫn ảnh', Icons.image_outlined),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _imageCtrl.text.isEmpty ? 'Chưa có ảnh' : 'Đang dùng ảnh đã lưu',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A)),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.upload_file, size: 18),
+                      label: const Text('Chọn ảnh'),
+                    ),
+                  ],
+                ),
               ]),
               const SizedBox(height: 16),
               _buildAvailableToggle(),
@@ -154,19 +173,21 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF6F4E37), width: 2),
       ),
-      child: _imageFile != null
+      child: _pickedBytes != null
           ? ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Image.file(_imageFile!, fit: BoxFit.cover))
+              borderRadius: BorderRadius.circular(18),
+              child: Image.memory(_pickedBytes!, fit: BoxFit.cover),
+            )
           : _imageCtrl.text.startsWith('http')
-          ? ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Image.network(
-            _imageCtrl.text,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40, color: Color(0xFF9C7B5A)),
-          ))
-          : const Icon(Icons.add_a_photo, size: 40, color: Color(0xFF9C7B5A)),
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Image.network(
+                    _imageCtrl.text,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 40, color: Color(0xFF9C7B5A)),
+                  ),
+                )
+              : const Icon(Icons.add_a_photo, size: 40, color: Color(0xFF9C7B5A)),
     );
   }
 
@@ -270,10 +291,10 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _submit,
+        onPressed: _isUploading ? null : _submit,
         icon: Icon(_isEdit ? Icons.save : Icons.add, color: Colors.white),
         label: Text(
-          _isEdit ? 'Lưu thay đổi' : 'Thêm món mới',
+          _isUploading ? 'Đang tải ảnh...' : (_isEdit ? 'Lưu thay đổi' : 'Thêm món mới'),
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         style: ElevatedButton.styleFrom(
@@ -288,13 +309,29 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       final menuProvider = Provider.of<MenuProvider>(context, listen: false);
+      final firebaseService = FirebaseService();
+
+      String imageUrl = _imageCtrl.text;
+      try {
+        if (_pickedXFile != null) {
+          setState(() => _isUploading = true);
+          final ext = (_pickedXFile!.name.split('.').last).toLowerCase();
+          imageUrl = await firebaseService.uploadMenuItemImageBytes(
+            bytes: _pickedBytes!,
+            fileExt: ext,
+          );
+          _imageCtrl.text = imageUrl;
+        }
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
 
       final item = MenuItemModel(
         id: _isEdit ? widget.menuItem!.id : '',
         name: _nameCtrl.text,
         description: _descCtrl.text,
         price: double.tryParse(_priceCtrl.text) ?? 0,
-        imageUrl: _imageCtrl.text,
+        imageUrl: imageUrl,
         category: _selectedCategory,
         isAvailable: _isAvailable,
       );

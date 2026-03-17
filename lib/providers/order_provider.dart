@@ -75,18 +75,31 @@ class OrderProvider extends ChangeNotifier {
       List<dynamic> currentItemsRaw = List.from(doc.data()?['items'] ?? []);
       double currentTotal = (doc.data()?['totalAmount'] ?? 0).toDouble();
 
+      final batchId = 'add_${DateTime.now().millisecondsSinceEpoch}';
+
       for (var newItem in newItems) {
         // ✅ Không cộng dồn vào món đã "isDone: true"
         // Chúng ta cứ add mới vào list để Barista thấy món mới cần pha
-        currentItemsRaw.add(newItem.toMap());
-        currentTotal += (newItem.unitPrice * newItem.quantity);
+        final itemWithBatch = OrderItemModel(
+          menuItemId: newItem.menuItemId,
+          menuItemName: newItem.menuItemName,
+          unitPrice: newItem.unitPrice,
+          quantity: newItem.quantity,
+          note: newItem.note,
+          isDone: newItem.isDone,
+          batchId: batchId,
+        );
+        currentItemsRaw.add(itemWithBatch.toMap());
+        currentTotal += (itemWithBatch.unitPrice * itemWithBatch.quantity);
       }
 
       await _firestore.collection('orders').doc(orderId).update({
         'items': currentItemsRaw,
         'totalAmount': currentTotal,
         'updatedAt': FieldValue.serverTimestamp(),
-        // Giữ nguyên status của Order, không kéo về 'pending' nữa
+        'batchStatus.$batchId': 'pending',
+        // Có món mới => đẩy overall về pending để Barista thấy card mới
+        'status': 'pending',
       });
 
       return true;
@@ -127,6 +140,23 @@ class OrderProvider extends ChangeNotifier {
       await _firebaseService.updateOrderStatus(orderId, statusString);
     } catch (e) {
       _error = 'Lỗi cập nhật trạng thái: $e';
+    }
+  }
+
+  Future<void> updateOrderBatchStatus({
+    required String orderId,
+    required String batchId,
+    required OrderStatus status,
+  }) async {
+    try {
+      final statusString = status.toString().split('.').last;
+      await _firebaseService.updateOrderBatchStatus(
+        orderId: orderId,
+        batchId: batchId,
+        status: statusString,
+      );
+    } catch (e) {
+      _error = 'Lỗi cập nhật trạng thái card: $e';
     }
   }
 

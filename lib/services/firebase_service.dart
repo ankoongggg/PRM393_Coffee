@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/order_model.dart';
 import '../models/order_item_model.dart';
 import '../models/table_model.dart';
@@ -9,6 +10,7 @@ import '../core/enums/table_status.dart';
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseStorage _storage = FirebaseStorage.instance;
 
   FirebaseService._internal();
 
@@ -62,20 +64,32 @@ class FirebaseService {
     required double totalAmount,
   }) async {
     try {
+      final batchIds = items
+          .map((i) => i.batchId.isEmpty ? 'initial' : i.batchId)
+          .toSet()
+          .toList();
+      if (batchIds.isEmpty) batchIds.add('initial');
+      final batchStatus = <String, String>{
+        for (final b in batchIds) b: 'pending',
+      };
+
       final docRef = await _firestore.collection('orders').add({
         'tableId': tableId,
         'tableNumber': tableNumber,
         'waiterId': waiterId,
         'waiterName': waiterName,
         'items': items
-            .map((item) => {
-          'menuItemId': item.menuItemId,
-          'menuItemName': item.menuItemName,
-          'unitPrice': item.unitPrice,
-          'quantity': item.quantity,
-          'note': item.note,
-        })
+            .map((item) => OrderItemModel(
+                  menuItemId: item.menuItemId,
+                  menuItemName: item.menuItemName,
+                  unitPrice: item.unitPrice,
+                  quantity: item.quantity,
+                  note: item.note,
+                  isDone: item.isDone,
+                  batchId: item.batchId,
+                ).toMap())
             .toList(),
+        'batchStatus': batchStatus,
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
         'totalAmount': totalAmount,
@@ -88,6 +102,15 @@ class FirebaseService {
 
   Future<void> updateOrderStatus(String orderId, String status) async {
     try {
+      // Guard: không cho hủy khi đơn đã hoàn thành/đã phục vụ
+      if (status == 'cancelled') {
+        final snap = await _firestore.collection('orders').doc(orderId).get();
+        final currentStatus = snap.data()?['status'] as String?;
+        if (currentStatus == 'completed' || currentStatus == 'served') {
+          throw Exception('Không thể hủy đơn khi đã hoàn thành/đã phục vụ');
+        }
+      }
+
       await _firestore.collection('orders').doc(orderId).update({
         'status': status,
         if (status == 'completed') 'completedAt': FieldValue.serverTimestamp(),
@@ -97,16 +120,50 @@ class FirebaseService {
     }
   }
 
+  Future<void> updateOrderBatchStatus({
+    required String orderId,
+    required String batchId,
+    required String status,
+  }) async {
+    await _firestore.runTransaction((tx) async {
+      final ref = _firestore.collection('orders').doc(orderId);
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+
+      final data = snap.data() as Map<String, dynamic>? ?? {};
+      final currentOrderStatus = data['status'] as String?;
+      if (currentOrderStatus == 'cancelled' || currentOrderStatus == 'served') {
+        return;
+      }
+
+      final currentBatchStatusRaw = (data['batchStatus'] as Map?)?.cast<String, dynamic>() ?? {};
+      final updatedBatchStatus = <String, String>{
+        for (final e in currentBatchStatusRaw.entries)
+          e.key: (e.value ?? 'pending').toString(),
+      };
+      final b = batchId.isEmpty ? 'initial' : batchId;
+      updatedBatchStatus[b] = status;
+
+      // Recompute overall order status from batches
+      String overall = 'completed';
+      if (updatedBatchStatus.values.any((s) => s == 'pending')) {
+        overall = 'pending';
+      } else if (updatedBatchStatus.values.any((s) => s == 'preparing')) {
+        overall = 'preparing';
+      }
+
+      tx.update(ref, {
+        'batchStatus': updatedBatchStatus,
+        'status': overall,
+        if (overall == 'completed') 'completedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   Future<void> updateOrderItems(String orderId, List<OrderItemModel> newItems, double newTotal) async {
     try {
       await _firestore.collection('orders').doc(orderId).update({
-        'items': newItems.map((item) => {
-          'menuItemId': item.menuItemId,
-          'menuItemName': item.menuItemName,
-          'unitPrice': item.unitPrice,
-          'quantity': item.quantity,
-          'note': item.note,
-        }).toList(),
+        'items': newItems.map((item) => item.toMap()).toList(),
         'totalAmount': newTotal,
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -128,6 +185,25 @@ class FirebaseService {
   // ─────────────────────────────────────────────────────────────
   // Menu Items
   // ─────────────────────────────────────────────────────────────
+
+  Future<String> uploadMenuItemImageBytes({
+    required List<int> bytes,
+    required String fileExt,
+  }) async {
+    final safeExt = fileExt.isEmpty ? 'jpg' : fileExt.toLowerCase();
+    final fileName = 'menu_${DateTime.now().millisecondsSinceEpoch}.$safeExt';
+    final ref = _storage.ref().child('menu_images/$fileName');
+    final contentType = switch (safeExt) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      _ => 'application/octet-stream',
+    };
+    final meta = SettableMetadata(contentType: contentType);
+    final task = await ref.putData(bytes, meta);
+    return await task.ref.getDownloadURL();
+  }
 
   Future<List<MenuItemModel>> fetchAllMenuItems() async {
     try {
@@ -245,13 +321,8 @@ class FirebaseService {
     List<OrderItemModel> items = [];
     if (data['items'] is List) {
       items = (data['items'] as List)
-          .map((item) => OrderItemModel(
-        menuItemId: item['menuItemId'] ?? '',
-        menuItemName: item['menuItemName'] ?? '',
-        unitPrice: (item['unitPrice'] ?? 0).toDouble(),
-        quantity: item['quantity'] ?? 1,
-        note: item['note'],
-      ))
+          .whereType<Map<String, dynamic>>()
+          .map((item) => OrderItemModel.fromMap(item))
           .toList();
     }
 
@@ -263,6 +334,32 @@ class FirebaseService {
       );
     } catch (_) {}
 
+    Map<String, OrderStatus> batchStatus = {};
+    final raw = data['batchStatus'];
+    if (raw is Map) {
+      for (final e in raw.entries) {
+        final key = e.key?.toString() ?? 'initial';
+        final val = e.value?.toString() ?? 'pending';
+        try {
+          batchStatus[key] = OrderStatus.values.firstWhere(
+            (s) => s.toString().split('.').last == val,
+            orElse: () => status,
+          );
+        } catch (_) {
+          batchStatus[key] = status;
+        }
+      }
+    }
+    // Backward compatibility: nếu order cũ chưa có batchStatus thì khởi tạo theo status hiện tại
+    if (batchStatus.isEmpty) {
+      final batchIds = items
+          .map((i) => i.batchId.isEmpty ? 'initial' : i.batchId)
+          .toSet()
+          .toList();
+      if (batchIds.isEmpty) batchIds.add('initial');
+      batchStatus = {for (final b in batchIds) b: status};
+    }
+
     return OrderModel(
       id: doc.id,
       tableId: data['tableId'] ?? '',
@@ -271,6 +368,7 @@ class FirebaseService {
       waiterName: data['waiterName'] ?? '',
       items: items,
       status: status,
+      batchStatus: batchStatus,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       completedAt: (data['completedAt'] as Timestamp?)?.toDate(),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
@@ -314,7 +412,8 @@ class FirebaseService {
       name: data['name'] ?? '',
       description: data['description'] ?? '',
       price: priceValue,
-      imageUrl: data['imageUrl'] ?? '',
+      // Backward compatibility: support cả `imageUrl` và `image_url`
+      imageUrl: (data['imageUrl'] ?? data['image_url'] ?? '').toString(),
       category: data['category'] ?? '',
       isAvailable: data['isAvailable'] ?? true,
     );

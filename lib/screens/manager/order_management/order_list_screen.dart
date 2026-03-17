@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/order_provider.dart';
+import '../../../widgets/date_range_filter_field.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -16,6 +17,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     'all': 'Tất cả', 'pending': 'Chờ pha', 'preparing': 'Đang pha',
     'completed': 'Xong', 'cancelled': 'Đã hủy',
   };
+  DateTime? _fromDate;
+  DateTime? _toDate;
 
   @override
   void initState() {
@@ -26,11 +29,44 @@ class _OrderListScreenState extends State<OrderListScreen> {
     });
   }
 
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _endOfDay(DateTime d) => DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+
+  Future<void> _pickRangeCompact() async {
+    final range = await showCompactDateRangePickerDialog(
+      context,
+      initialFrom: _fromDate,
+      initialTo: _toDate,
+    );
+    if (!mounted) return;
+    if (range?.startDate == null || range?.endDate == null) return;
+    setState(() {
+      _fromDate = range!.startDate;
+      _toDate = range.endDate;
+    });
+  }
+
   List<dynamic> _getFilteredOrders(OrderProvider provider) {
-    if (_selectedFilter == 'all') {
-      return provider.orders;
+    Iterable<dynamic> result = provider.orders;
+
+    if (_selectedFilter != 'all') {
+      result = result.where((o) =>
+          o.status.toString().split('.').last == _selectedFilter);
     }
-    return provider.orders.where((o) => o.status.toString().split('.').last == _selectedFilter).toList();
+
+    if (_fromDate != null && _toDate != null) {
+      final start = _startOfDay(_fromDate!);
+      final end = _endOfDay(_toDate!);
+      result = result.where((o) {
+        final t = o.createdAt as DateTime;
+        return !t.isBefore(start) && !t.isAfter(end);
+      });
+    }
+
+    return result.toList();
   }
 
   Color _statusColor(String s) => switch (s) {
@@ -92,6 +128,28 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ),
           body: Column(
             children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                ),
+                child: DateRangeFilterField(
+                  fromDate: _fromDate,
+                  toDate: _toDate,
+                  onTap: _pickRangeCompact,
+                  onClear: (_fromDate != null || _toDate != null)
+                      ? () => setState(() {
+                            _fromDate = null;
+                            _toDate = null;
+                          })
+                      : null,
+                  placeholder: 'Chọn khoảng ngày',
+                ),
+              ),
               _buildFilterBar(),
               _buildSummaryRow(filteredOrders),
               // Hiển thị lỗi nếu có

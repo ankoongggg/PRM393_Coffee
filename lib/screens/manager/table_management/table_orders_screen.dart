@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/order_provider.dart';
 import '../../../core/enums/order_status.dart';
+import '../../../widgets/date_range_filter_field.dart';
 
 class TableOrdersScreen extends StatefulWidget {
   final String tableId;
@@ -20,12 +21,73 @@ class TableOrdersScreen extends StatefulWidget {
 }
 
 class _TableOrdersScreenState extends State<TableOrdersScreen> {
+  DateTime? _fromDate;
+  DateTime? _toDate;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<OrderProvider>(context, listen: false).startOrderListener();
     });
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+  DateTime _endOfDay(DateTime d) => DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+
+  Future<void> _pickRangeCompact() async {
+    final range = await showCompactDateRangePickerDialog(
+      context,
+      initialFrom: _fromDate,
+      initialTo: _toDate,
+    );
+    if (!mounted) return;
+    if (range?.startDate == null || range?.endDate == null) return;
+    setState(() {
+      _fromDate = range!.startDate;
+      _toDate = range.endDate;
+    });
+  }
+
+  Future<void> _pickFromDate() async {
+    final now = DateTime.now();
+    final initial = _fromDate ?? _toDate ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year - 5, 1, 1),
+      lastDate: DateTime(now.year + 5, 12, 31),
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _fromDate = picked;
+      if (_toDate != null && _toDate!.isBefore(picked)) {
+        _toDate = picked;
+      }
+    });
+  }
+
+  Future<void> _pickToDate() async {
+    final now = DateTime.now();
+    final initial = _toDate ?? _fromDate ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year - 5, 1, 1),
+      lastDate: DateTime(now.year + 5, 12, 31),
+    );
+    if (!mounted) return;
+    if (picked != null) {
+      setState(() {
+        _toDate = picked;
+        if (_fromDate != null && picked.isBefore(_fromDate!)) {
+          _fromDate = picked;
+        }
+      });
+    }
   }
 
   String _formatPrice(double amount) =>
@@ -53,7 +115,17 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
     return Consumer<OrderProvider>(
       builder: (context, orderProvider, _) {
         // Lấy tất cả đơn hàng của bàn này
-        final tableOrders = orderProvider.ordersByTable(widget.tableId);
+        final tableOrdersAll = orderProvider.ordersByTable(widget.tableId);
+        final tableOrders = (_fromDate == null || _toDate == null)
+            ? tableOrdersAll
+            : tableOrdersAll
+                .where((o) {
+                  final start = _startOfDay(_fromDate!);
+                  final end = _endOfDay(_toDate!);
+                  final t = o.createdAt as DateTime;
+                  return !t.isBefore(start) && !t.isAfter(end);
+                })
+                .toList();
 
         return Scaffold(
           backgroundColor: const Color(0xFFFAF6F1),
@@ -77,7 +149,32 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
               ),
             ],
           ),
-          body: tableOrders.isEmpty
+          body: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                ),
+                child: DateRangeFilterField(
+                  fromDate: _fromDate,
+                  toDate: _toDate,
+                  onTap: _pickRangeCompact,
+                  onClear: (_fromDate != null || _toDate != null)
+                      ? () => setState(() {
+                            _fromDate = null;
+                            _toDate = null;
+                          })
+                      : null,
+                  placeholder: 'Chọn khoảng ngày',
+                ),
+              ),
+              Expanded(
+                child: tableOrders.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -89,7 +186,9 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Bàn này chưa có đơn hàng',
+                        (_fromDate == null || _toDate == null)
+                            ? 'Bàn này chưa có đơn hàng'
+                            : 'Không có đơn hàng trong khoảng ngày đã chọn',
                         style: TextStyle(
                           fontSize: 16,
                           color: const Color(0xFF9E7B5A).withOpacity(0.7),
@@ -111,6 +210,9 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
         );
       },
     );

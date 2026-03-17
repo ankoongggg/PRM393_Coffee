@@ -98,6 +98,7 @@ class _TableListScreenState extends State<TableListScreen> {
         final tables = tableProvider.tables;
         final available = tables.where((t) => t.status.toString().split('.').last == 'available').length;
         final occupied = tables.where((t) => t.status.toString().split('.').last == 'occupied').length;
+        final waiting = tables.where((t) => t.status.toString().split('.').last == 'waiting').length;
 
         if (tableProvider.isLoading) {
           return Scaffold(
@@ -145,7 +146,7 @@ class _TableListScreenState extends State<TableListScreen> {
           ),
           body: Column(
             children: [
-              _buildLegendBar(available, occupied),
+              _buildLegendBar(available, waiting, occupied),
               Expanded(child: _buildGrid(tables)),
             ],
           ),
@@ -154,7 +155,7 @@ class _TableListScreenState extends State<TableListScreen> {
     );
   }
 
-  Widget _buildLegendBar(int available, int occupied) {
+  Widget _buildLegendBar(int available, int waiting, int occupied) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(14),
@@ -167,7 +168,7 @@ class _TableListScreenState extends State<TableListScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _LegendItem(color: const Color(0xFF27AE60), label: 'Trống ($available)'),
-          _LegendItem(color: const Color(0xFF0056B3), label: 'Chờ phục vụ'),
+          _LegendItem(color: const Color(0xFF0056B3), label: 'Chờ phục vụ ($waiting)'),
           _LegendItem(color: Colors.red, label: 'Đang phục vụ ($occupied)'),
           
         ],

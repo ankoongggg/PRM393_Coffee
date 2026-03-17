@@ -9,6 +9,7 @@ class OrderModel {
   final String waiterName;
   final List<OrderItemModel> items;
   final OrderStatus status;
+  final Map<String, OrderStatus> batchStatus;
   final DateTime createdAt;
   final DateTime? completedAt;
   final double totalAmount;
@@ -21,6 +22,7 @@ class OrderModel {
     required this.waiterName,
     required this.items,
     this.status = OrderStatus.pending,
+    this.batchStatus = const {},
     required this.createdAt,
     this.completedAt,
     required this.totalAmount,

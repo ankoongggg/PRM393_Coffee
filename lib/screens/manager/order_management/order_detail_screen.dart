@@ -68,6 +68,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   void _cancelOrder() {
+    final status = _order['status'] as String;
+    if (status == 'completed') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('❌ Đơn đã hoàn thành nên không thể hủy'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -93,6 +104,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final status = _order['status'] as String;
     final canAdvance = _statusFlow.contains(status) && status != 'served';
     final isCancelled = status == 'cancelled';
+    final isCompleted = status == 'completed';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF6F1),
@@ -104,7 +116,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         title: Text('Đơn ${_order['id']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
-          if (!isCancelled && status != 'served')
+          if (!isCancelled && !isCompleted && status != 'served')
             IconButton(
               icon: const Icon(Icons.cancel_outlined, color: Colors.white70),
               tooltip: 'Hủy đơn',

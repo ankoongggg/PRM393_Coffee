@@ -10,6 +10,7 @@ class ManagerDashboard extends StatelessWidget {
       backgroundColor: const Color(0xFFFAF6F1),
       appBar: AppBar(
         backgroundColor: const Color(0xFF6F4E37),
+        automaticallyImplyLeading: false,
         title: const Text('👔 Quản lý', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(

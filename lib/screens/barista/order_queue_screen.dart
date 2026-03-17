@@ -15,6 +15,35 @@ class OrderQueueScreen extends StatefulWidget {
 class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  OrderStatus _batchStatus(OrderModel order, String batchId) {
+    final b = batchId.isEmpty ? 'initial' : batchId;
+    // Nếu batchStatus chưa có key (data cũ), mặc định coi như pending để tránh
+    // việc đổi status tổng làm tất cả card "đổi theo".
+    return order.batchStatus[b] ?? OrderStatus.pending;
+  }
+
+  List<String> _sortedBatchKeys(OrderModel order) {
+    final keys = order.items
+        .map((i) => i.batchId.isEmpty ? 'initial' : i.batchId)
+        .toSet()
+        .toList();
+    keys.sort((a, b) {
+      if (a == 'initial' && b != 'initial') return -1;
+      if (b == 'initial' && a != 'initial') return 1;
+      final aTs = int.tryParse(a.startsWith('add_') ? a.substring(4) : a) ?? 0;
+      final bTs = int.tryParse(b.startsWith('add_') ? b.substring(4) : b) ?? 0;
+      return aTs.compareTo(bTs);
+    });
+    return keys;
+  }
+
+  List<OrderItemModel> _itemsForBatch(OrderModel order, String batchId) {
+    final b = batchId.isEmpty ? 'initial' : batchId;
+    return order.items.where((i) => (i.batchId.isEmpty ? 'initial' : i.batchId) == b).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -39,9 +68,26 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     try {
       await orderProvider.updateOrderItems(order.id, updatedItems);
 
-      // Tự động chuyển sang Hoàn thành nếu đã tích hết món khi đang ở tab "Pha"
-      if (order.status == OrderStatus.preparing && updatedItems.every((item) => item.isDone)) {
-        _updateOrderStatus(order.id, OrderStatus.completed, 'Đã xong toàn bộ món!', Colors.green);
+      // Tự động chuyển batch sang Hoàn thành nếu đã tích hết món của batch khi đang ở tab "Pha"
+      final batchId = updatedItems[itemIndex].batchId;
+      final batchItems = updatedItems.where((i) => i.batchId == batchId).toList();
+      if (_batchStatus(order, batchId) == OrderStatus.preparing &&
+          batchItems.isNotEmpty &&
+          batchItems.every((item) => item.isDone)) {
+        await orderProvider.updateOrderBatchStatus(
+          orderId: order.id,
+          batchId: batchId,
+          status: OrderStatus.completed,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Batch đã hoàn thành!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -69,16 +115,54 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     }
   }
 
+  Future<void> _updateBatchStatus({
+    required String orderId,
+    required String batchId,
+    required OrderStatus newStatus,
+    required String message,
+    required Color color,
+  }) async {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    try {
+      await orderProvider.updateOrderBatchStatus(
+        orderId: orderId,
+        batchId: batchId,
+        status: newStatus,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: color, behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<OrderProvider>(
       builder: (context, orderProvider, child) {
         final allOrders = orderProvider.orders;
 
-        // SỬA LẠI LOGIC LỌC: Chỉ lọc theo Status của Order
-        final pendingOrders = allOrders.where((o) => o.status == OrderStatus.pending).toList();
-        final preparingOrders = allOrders.where((o) => o.status == OrderStatus.preparing).toList();
-        final completedOrders = allOrders.where((o) => o.status == OrderStatus.completed).toList();
+        // Lọc theo batchStatus (mỗi card là 1 batch)
+        final pendingEntries = <({OrderModel order, String batchId, int batchIndex, int batchCount})>[];
+        final preparingEntries = <({OrderModel order, String batchId, int batchIndex, int batchCount})>[];
+        final completedEntries = <({OrderModel order, String batchId, int batchIndex, int batchCount})>[];
+
+        for (final o in allOrders) {
+          final keys = _sortedBatchKeys(o);
+          for (var i = 0; i < keys.length; i++) {
+            final b = keys[i];
+            final s = _batchStatus(o, b);
+            final entry = (order: o, batchId: b, batchIndex: i, batchCount: keys.length);
+            if (s == OrderStatus.pending) pendingEntries.add(entry);
+            if (s == OrderStatus.preparing) preparingEntries.add(entry);
+            if (s == OrderStatus.completed) completedEntries.add(entry);
+          }
+        }
 
         return Scaffold(
           backgroundColor: const Color(0xFFF0F4FF),
@@ -95,18 +179,18 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white60,
               tabs: [
-                Tab(text: '⏳ Chờ (${pendingOrders.length})'),
-                Tab(text: '🔄 Pha (${preparingOrders.length})'),
-                Tab(text: '✅ Xong (${completedOrders.length})'),
+                Tab(text: '⏳ Chờ (${pendingEntries.length})'),
+                Tab(text: '🔄 Pha (${preparingEntries.length})'),
+                Tab(text: '✅ Xong (${completedEntries.length})'),
               ],
             ),
           ),
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildOrderList(pendingOrders, OrderStatus.pending),
-              _buildOrderList(preparingOrders, OrderStatus.preparing),
-              _buildOrderList(completedOrders, OrderStatus.completed),
+              _buildEntryList(pendingEntries, OrderStatus.pending),
+              _buildEntryList(preparingEntries, OrderStatus.preparing),
+              _buildEntryList(completedEntries, OrderStatus.completed),
             ],
           ),
         );
@@ -114,29 +198,45 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildOrderList(List<OrderModel> orders, OrderStatus status) {
-    if (orders.isEmpty) return _buildEmptyState(status);
+  Widget _buildEntryList(
+    List<({OrderModel order, String batchId, int batchIndex, int batchCount})> entries,
+    OrderStatus status,
+  ) {
+    if (entries.isEmpty) return _buildEmptyState(status);
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: orders.length,
-      itemBuilder: (_, i) => _buildOrderCard(orders[i], status),
+      itemCount: entries.length,
+      itemBuilder: (_, i) => _buildOrderBatchCard(
+        entries[i].order,
+        status,
+        entries[i].batchId,
+        entries[i].batchIndex,
+        entries[i].batchCount,
+      ),
     );
   }
 
-  Widget _buildOrderCard(OrderModel order, OrderStatus status) {
+  Widget _buildOrderBatchCard(
+    OrderModel order,
+    OrderStatus status,
+    String batchId,
+    int batchIndex,
+    int batchCount,
+  ) {
+    final batchItems = _itemsForBatch(order, batchId);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       child: Column(
         children: [
-          _buildCardHeader(order, status),
+          _buildBatchHeader(order, status, batchIndex, batchCount),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
                 // ✅ ĐÃ XÓA CHECKBOX - CHỈ HIỂN THỊ DANH SÁCH MÓN
-                ...order.items.map((item) {
+                ...batchItems.map((item) {
                   return ListTile(
                     dense: true, // Làm cho dòng gọn hơn
                     leading: Container(
@@ -176,7 +276,7 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
                         'Bàn ${order.tableNumber}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1565C0)),
                       ),
-                      _buildActionButton(order, status),
+                      _buildActionButton(order, status, batchId),
                     ],
                   ),
                 ),
@@ -188,7 +288,7 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildCardHeader(OrderModel order, OrderStatus status) {
+  Widget _buildBatchHeader(OrderModel order, OrderStatus status, int batchIndex, int batchCount) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -198,28 +298,37 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('📋 #${order.id.substring(order.id.length > 5 ? order.id.length - 5 : 0)}',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            '📋 Bill ${order.id.substring(0, 6).toUpperCase()} • Lần ${(batchIndex + 1).toString().padLeft(2, '0')}/$batchCount',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           Text('Waiter: ${order.waiterName}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(OrderModel order, OrderStatus status) {
+  Widget _buildActionButton(OrderModel order, OrderStatus status, String batchId) {
     // Nút tại tab CHỜ
     if (status == OrderStatus.pending) {
       return ElevatedButton.icon(
         icon: const Icon(Icons.play_arrow, color: Colors.white),
         label: const Text('BẮT ĐẦU PHA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700]),
-        onPressed: () => _updateOrderStatus(order.id, OrderStatus.preparing, 'Đã chuyển sang Đang pha', Colors.blue),
+        onPressed: () => _updateBatchStatus(
+          orderId: order.id,
+          batchId: batchId,
+          newStatus: OrderStatus.preparing,
+          message: 'Đã chuyển batch sang Đang pha',
+          color: Colors.blue,
+        ),
       );
     }
 
     // Nút tại tab ĐANG PHA
     if (status == OrderStatus.preparing) {
-      bool allDone = order.items.every((item) => item.isDone);
+      final batchItems = _itemsForBatch(order, batchId);
+      bool allDone = batchItems.isNotEmpty && batchItems.every((item) => item.isDone);
       return ElevatedButton.icon(
         icon: const Icon(Icons.check, color: Colors.white),
         label: const Text('HOÀN THÀNH', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -227,7 +336,13 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> with SingleTickerPr
         style: ElevatedButton.styleFrom(
           backgroundColor: allDone ? Colors.green[700] : Colors.grey,
         ),
-        onPressed: () => _updateOrderStatus(order.id, OrderStatus.completed, 'Đơn hàng đã hoàn thành!', Colors.green),
+        onPressed: () => _updateBatchStatus(
+          orderId: order.id,
+          batchId: batchId,
+          newStatus: OrderStatus.completed,
+          message: 'Batch đã hoàn thành!',
+          color: Colors.green,
+        ),
       );
     }
 

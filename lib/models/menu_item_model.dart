@@ -22,7 +22,9 @@ class MenuItemModel {
       'name': name,
       'description': description,
       'price': price,
+      // Backward compatibility: một số bản cũ lưu key `image_url`
       'imageUrl': imageUrl,
+      'image_url': imageUrl,
       'category': category,
       'isAvailable': isAvailable,
     };

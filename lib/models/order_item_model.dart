@@ -5,6 +5,7 @@ class OrderItemModel {
   int quantity;
   final String? note;
   bool isDone; // ✅ Thêm dòng này: Đánh dấu món đã pha xong chưa
+  final String batchId; // ✅ Nhóm theo lần đặt (đặt thêm)
 
   OrderItemModel({
     required this.menuItemId,
@@ -13,6 +14,7 @@ class OrderItemModel {
     required this.quantity,
     this.note,
     this.isDone = false, // ✅ Mặc định món mới là chưa xong
+    this.batchId = 'initial',
   });
 
   double get subtotal => unitPrice * quantity;
@@ -25,6 +27,7 @@ class OrderItemModel {
       'quantity': quantity,
       'note': note,
       'isDone': isDone, // ✅ Lưu trạng thái xuống Firebase
+      'batchId': batchId,
     };
   }
 
@@ -36,6 +39,7 @@ class OrderItemModel {
       quantity: map['quantity'] ?? 0,
       note: map['note'],
       isDone: map['isDone'] ?? false, // ✅ Lấy trạng thái từ Firebase về
+      batchId: map['batchId'] ?? 'initial',
     );
   }
 }

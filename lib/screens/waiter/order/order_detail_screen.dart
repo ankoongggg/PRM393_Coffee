@@ -108,6 +108,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   void _onCancelOrder() async {
     if (_isProcessing) return;
 
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    OrderModel? latestOrder;
+    try {
+      latestOrder = orderProvider.orders.firstWhere((o) => o.id == widget.order.id);
+    } catch (_) {
+      latestOrder = null;
+    }
+
+    final status = (latestOrder ?? widget.order).status;
+    final cannotCancel = status == OrderStatus.completed ||
+        status == OrderStatus.served ||
+        status == OrderStatus.cancelled;
+
+    if (cannotCancel) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Không thể hủy đơn khi trạng thái là: ${status.displayName}'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -204,30 +228,49 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           
           // Wrap vào list để hiển thị như 1 order
           final tableOrders = [currentOrder];
+          final cannotCancel = currentOrder.status == OrderStatus.completed ||
+              currentOrder.status == OrderStatus.served ||
+              currentOrder.status == OrderStatus.cancelled;
+
+          final Map<String, List<dynamic>> itemsByBatch = {};
+          for (final item in currentOrder.items) {
+            final batchId = (item.batchId.isEmpty) ? 'initial' : item.batchId;
+            (itemsByBatch[batchId] ??= []).add(item);
+          }
+          final batchKeys = itemsByBatch.keys.toList()
+            ..sort((a, b) {
+              if (a == 'initial' && b != 'initial') return -1;
+              if (b == 'initial' && a != 'initial') return 1;
+              final aTs = int.tryParse(a.startsWith('add_') ? a.substring(4) : a) ?? 0;
+              final bTs = int.tryParse(b.startsWith('add_') ? b.substring(4) : b) ?? 0;
+              return aTs.compareTo(bTs);
+            });
 
           return Column(
             children: [
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  itemCount: tableOrders.length,
+                  itemCount: batchKeys.length,
                   itemBuilder: (_, i) {
-                    final order = tableOrders[i];
-                    final orderTotal = order.items.fold<double>(
+                    final batchId = batchKeys[i];
+                    final batchItems = itemsByBatch[batchId]!;
+                    final orderTotal = batchItems.fold<double>(
                       0,
                       (sum, item) => sum + item.subtotal,
                     );
 
-                    // Determine status label and color
+                    // Trạng thái theo từng card/batch
+                    final batchStatus = currentOrder.batchStatus[batchId] ?? OrderStatus.pending;
                     String statusLabel = '';
                     Color statusColor = Colors.grey;
-                    if (order.status == OrderStatus.pending) {
+                    if (batchStatus == OrderStatus.pending) {
                       statusLabel = 'Chờ';
                       statusColor = Colors.orange;
-                    } else if (order.status == OrderStatus.preparing) {
+                    } else if (batchStatus == OrderStatus.preparing) {
                       statusLabel = 'Đang pha';
                       statusColor = Colors.blue;
-                    } else if (order.status == OrderStatus.completed) {
+                    } else if (batchStatus == OrderStatus.completed) {
                       statusLabel = 'Hoàn thành';
                       statusColor = Colors.green;
                     }
@@ -245,7 +288,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Đơn #${(i + 1).toString().padLeft(2, '0')}',
+                                  'Bill ${widget.order.id.substring(0, 6).toUpperCase()} • Lần ${(i + 1).toString().padLeft(2, '0')}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -273,7 +316,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             ),
                             const Divider(height: 12),
                             // Items in this order
-                            ...order.items.map((item) => Padding(
+                            ...batchItems.map((item) => Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -395,25 +438,48 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red[100],
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                            style: ButtonStyle(
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+                                (states) {
+                                  if (states.contains(WidgetState.disabled)) {
+                                    return Colors.black;
+                                  }
+                                  return Colors.red[100];
+                                },
+                              ),
+                              foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+                                (states) {
+                                  if (states.contains(WidgetState.disabled)) {
+                                    return Colors.white;
+                                  }
+                                  return Colors.red;
+                                },
+                              ),
+                              iconColor: WidgetStateProperty.resolveWith<Color?>(
+                                (states) {
+                                  if (states.contains(WidgetState.disabled)) {
+                                    return Colors.white;
+                                  }
+                                  return Colors.red;
+                                },
                               ),
                             ),
                             icon: const Icon(
                               Icons.close_outlined,
-                              color: Colors.red,
                             ),
                             label: const Text(
                               'Hủy đơn',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            onPressed: _isProcessing ? null : _onCancelOrder,
+                            onPressed: (_isProcessing || cannotCancel) ? null : _onCancelOrder,
                           ),
                         ),
                         const SizedBox(width: 8),
