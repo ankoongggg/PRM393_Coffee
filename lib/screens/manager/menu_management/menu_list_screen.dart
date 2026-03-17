@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../../routes/app_routes.dart';
 import '../../../providers/menu_provider.dart';
@@ -269,10 +270,12 @@ class _MenuListScreenState extends State<MenuListScreen> {
       );
     }
 
-    // Xử lý ảnh file cục bộ nếu có
-    final file = File(url);
-    if (file.existsSync()) {
-      return Image.file(file, fit: BoxFit.cover);
+    // ✅ Xử lý ảnh file cục bộ chỉ trên mobile, không web
+    if (!kIsWeb) {
+      final file = File(url);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
     }
 
     return const Center(child: Text('☕', style: TextStyle(fontSize: 32)));
