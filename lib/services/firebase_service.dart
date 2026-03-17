@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/order_model.dart';
@@ -201,7 +203,7 @@ class FirebaseService {
       _ => 'application/octet-stream',
     };
     final meta = SettableMetadata(contentType: contentType);
-    final task = await ref.putData(bytes, meta);
+    final task = await ref.putData(Uint8List.fromList(bytes), meta);
     return await task.ref.getDownloadURL();
   }
 

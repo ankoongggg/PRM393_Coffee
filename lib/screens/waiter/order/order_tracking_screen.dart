@@ -10,6 +10,14 @@ class OrderTrackingScreen extends StatefulWidget {
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+  // Theme colors consistent with HTML template
+  static const _bgWarm = Color(0xFFFDF8F6);
+  static const _coffee50 = Color(0xFFFDF8F6);
+  static const _coffee100 = Color(0xFFF2E8E5);
+  static const _coffee200 = Color(0xFFEADDD7);
+  static const _coffee600 = Color(0xFF8C634F);
+  static const _coffee900 = Color(0xFF4A332D);
+
   // TODO: replace with OrderProvider.getOrderById
   late Map<String, dynamic> _order;
 
@@ -30,22 +38,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   final _steps = ['pending', 'preparing', 'completed', 'served'];
   final _stepLabels = ['Chờ pha', 'Đang pha', 'Xong', 'Đã phục vụ'];
-  final _stepIcons = [Icons.hourglass_empty, Icons.local_cafe, Icons.check_circle, Icons.room_service];
+  final _stepIcons = [Icons.hourglass_empty_rounded, Icons.local_cafe_rounded, Icons.check_circle_rounded, Icons.room_service_rounded];
 
   int get _currentStep => _steps.indexOf(_order['status']);
 
   Color _statusColor(String s) => switch (s) {
-    'pending' => const Color(0xFFE67E22),
-    'preparing' => const Color(0xFF2980B9),
-    'completed' => const Color(0xFF27AE60),
-    'served' => const Color(0xFF8E44AD),
+    'pending' => const Color(0xFFD97706), // Orange
+    'preparing' => const Color(0xFF2563EB), // Blue
+    'completed' => const Color(0xFF059669), // Emerald
+    'served' => _coffee600,
     _ => Colors.grey,
+  };
+
+  Color _statusBgColor(String s) => switch (s) {
+    'pending' => const Color(0xFFFEF3C7),
+    'preparing' => const Color(0xFFDBEAFE),
+    'completed' => const Color(0xFFD1FAE5),
+    'served' => const Color(0xFFFDF8F6),
+    _ => Colors.grey[100]!,
   };
 
   String _statusLabel(String s) => switch (s) {
     'pending' => 'Chờ pha',
     'preparing' => 'Đang pha',
-    'completed' => 'Đã hoàn thành – Sẵn phục vụ!',
+    'completed' => 'Đã hoàn thành - Sẵn sàng!',
     'served' => 'Đã phục vụ ✓',
     _ => s,
   };
@@ -57,61 +73,91 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final isServed = status == 'served';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Theo dõi - ${_order['id']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: _bgWarm,
+      body: SafeArea(
         child: Column(
           children: [
-            _buildStatusCard(status),
-            const SizedBox(height: 16),
-            _buildTimeline(),
-            const SizedBox(height: 16),
-            _buildItemsCard(),
-            const SizedBox(height: 24),
-            if (isCompleted)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8E44AD),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.room_service, color: Colors.white),
-                  label: const Text('Đã phục vụ khách', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  onPressed: () {
-                    setState(() => _order['status'] = 'served');
-                    // TODO: OrderProvider.updateStatus(orderId, OrderStatus.served)
-                  },
-                ),
-              ),
-            if (isServed)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8E44AD).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF8E44AD).withValues(alpha: 0.3)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                    Icon(Icons.check_circle, color: Color(0xFF8E44AD)),
-                    SizedBox(width: 8),
-                    Text('Đơn đã hoàn tất!', style: TextStyle(color: Color(0xFF8E44AD), fontWeight: FontWeight.bold, fontSize: 16)),
+                    _buildStatusCard(status),
+                    const SizedBox(height: 20),
+                    _buildTimeline(),
+                    const SizedBox(height: 20),
+                    _buildItemsCard(),
+                    const SizedBox(height: 32),
+                    if (isCompleted)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _coffee600,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 4,
+                          ),
+                          icon: const Icon(Icons.room_service_rounded),
+                          label: const Text('XÁC NHẬN ĐÃ PHỤC VỤ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1)),
+                          onPressed: () {
+                            setState(() => _order['status'] = 'served');
+                            // TODO: OrderProvider.updateStatus(orderId, OrderStatus.served)
+                          },
+                        ),
+                      ),
+                    if (isServed)
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF059669)),
+                            SizedBox(width: 12),
+                            Text('Đơn đã phục vụ xong!', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 16)),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── HEADER ──
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: _coffee100)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: _coffee900),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('THEO DÕI ĐƠN HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
+              Text('Mã #${_order['id']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -119,18 +165,27 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildStatusCard(String status) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: _statusColor(status),
-        borderRadius: BorderRadius.circular(16),
+        color: _statusBgColor(status),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _statusColor(status).withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          Icon(_stepIcons[_currentStep.clamp(0, _stepIcons.length - 1)], size: 40, color: Colors.white),
-          const SizedBox(height: 10),
-          Text(_statusLabel(status), style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-          const SizedBox(height: 4),
-          Text('Bàn ${_order['table']} • ${_order['time']}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.5), shape: BoxShape.circle),
+            child: Icon(_stepIcons[_currentStep.clamp(0, _stepIcons.length - 1)], size: 48, color: _statusColor(status)),
+          ),
+          const SizedBox(height: 16),
+          Text(_statusLabel(status), style: TextStyle(color: _statusColor(status), fontSize: 18, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
+            child: Text('Bàn ${_order['table']} • Lúc ${_order['time']}', style: TextStyle(color: _statusColor(status).withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
@@ -138,17 +193,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildTimeline() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _coffee100),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Tiến trình', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A3C1F))),
-          const SizedBox(height: 16),
+          const Text('Tiến trình', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _coffee900)),
+          const SizedBox(height: 20),
           Column(
             children: List.generate(_steps.length, (i) {
               final done = i <= _currentStep;
@@ -160,28 +216,29 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     children: [
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 400),
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: done ? const Color(0xFF2E7D32) : const Color(0xFFE8F5E9),
-                          border: isCurrent ? Border.all(color: const Color(0xFF4CAF50), width: 2.5) : null,
+                          color: done ? _coffee600 : const Color(0xFFF5EDE0),
+                          border: isCurrent ? Border.all(color: _coffee200, width: 4) : null,
                         ),
-                        child: Icon(_stepIcons[i], size: 16, color: done ? Colors.white : const Color(0xFF9E9E9E)),
+                        child: Icon(_stepIcons[i], size: 16, color: done ? Colors.white : _coffee200),
                       ),
                       if (i < _steps.length - 1)
-                        Container(width: 2, height: 24, color: done ? const Color(0xFF2E7D32) : const Color(0xFFE0E0E0)),
+                        Container(width: 2, height: 32, color: done ? _coffee600 : _coffee100),
                     ],
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _stepLabels[i],
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                        color: done ? const Color(0xFF2E7D32) : const Color(0xFF9E9E9E),
+                        fontSize: 14,
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                        color: done ? _coffee900 : Colors.grey,
                       ),
                     ),
                   ),
@@ -197,25 +254,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Widget _buildItemsCard() {
     final items = _order['items'] as List;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _coffee100),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Món đã gọi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1A3C1F))),
-          const Divider(height: 20),
+          const Text('Món đã gọi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _coffee900)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, color: _coffee100),
+          ),
           ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: 12),
             child: Row(
               children: [
-                const Icon(Icons.local_cafe, size: 16, color: Color(0xFF4CAF50)),
-                const SizedBox(width: 8),
-                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 13))),
-                Text('x${item['qty']}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: _coffee50, borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.local_cafe_rounded, size: 20, color: _coffee600),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _coffee900))),
+                Text('x${item['qty']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee600)),
               ],
             ),
           )),

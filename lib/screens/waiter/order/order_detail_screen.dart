@@ -23,6 +23,13 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  // Theme colors consistent with HTML template
+  static const _bgWarm = Color(0xFFFDF8F6);
+  static const _coffee100 = Color(0xFFF2E8E5);
+  static const _coffee200 = Color(0xFFEADDD7);
+  static const _coffee600 = Color(0xFF8C634F);
+  static const _coffee900 = Color(0xFF4A332D);
+
   bool _isProcessing = false;
 
   double get _totalPrice =>
@@ -50,22 +57,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xác nhận phục vụ'),
-        content: Text('Bàn ${widget.tableNumber} đã được phục vụ?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Xác nhận phục vụ', style: TextStyle(color: _coffee900, fontWeight: FontWeight.bold)),
+        content: Text('Bàn ${widget.tableNumber} đã được phục vụ?', style: const TextStyle(color: _coffee600)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
+              backgroundColor: _coffee600,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Có',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Có', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -73,34 +80,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     if (confirmed ?? false) {
       setState(() => _isProcessing = true);
-
       try {
-        final tableProvider =
-            Provider.of<TableProvider>(context, listen: false);
+        final tableProvider = Provider.of<TableProvider>(context, listen: false);
         await tableProvider.setTableOccupied(widget.tableId, widget.order.id);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Đã cập nhật sang Đang phục vụ'),
-              backgroundColor: Color(0xFF2E7D32),
-            ),
+            const SnackBar(content: Text('✅ Đã cập nhật sang Đang phục vụ'), backgroundColor: _coffee600),
           );
-          Navigator.pop(context); // Quay lại TableListScreen
+          Navigator.pop(context); // Trở về TableList
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('❌ Lỗi: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Lỗi: $e'), backgroundColor: Colors.red));
         }
       } finally {
-        if (mounted) {
-          setState(() => _isProcessing = false);
-        }
+        if (mounted) setState(() => _isProcessing = false);
       }
     }
   }
@@ -124,10 +119,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (cannotCancel) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Không thể hủy đơn khi trạng thái là: ${status.displayName}'),
-          backgroundColor: Colors.orange,
-        ),
+        SnackBar(content: Text('❌ Không thể hủy đơn khi trạng thái là: ${status.displayName}'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -135,22 +127,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xác nhận hủy đơn'),
-        content: Text('Bạn có chắc muốn hủy đơn hàng cho bàn ${widget.tableNumber}?'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Xác nhận hủy đơn', style: TextStyle(color: _coffee900, fontWeight: FontWeight.bold)),
+        content: Text('Bạn có chắc muốn hủy đơn hàng cho bàn ${widget.tableNumber}?', style: const TextStyle(color: _coffee600)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Không'),
+            child: const Text('Không', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red[50],
+              foregroundColor: Colors.red,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Có, hủy đơn',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Có, hủy đơn', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -158,44 +152,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
     if (confirmed ?? false) {
       setState(() => _isProcessing = true);
-
       try {
-        final orderProvider =
-            Provider.of<OrderProvider>(context, listen: false);
-        final tableProvider =
-            Provider.of<TableProvider>(context, listen: false);
+        final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+        final tableProvider = Provider.of<TableProvider>(context, listen: false);
         
-        // Cancel the order
-        await orderProvider.updateOrderStatus(
-          widget.order.id,
-          OrderStatus.cancelled,
-        );
-        
-        // Reset table to available
+        await orderProvider.updateOrderStatus(widget.order.id, OrderStatus.cancelled);
         await tableProvider.setTableAvailable(widget.tableId);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Đã hủy đơn thành công'),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('✅ Đã hủy đơn thành công'), backgroundColor: Colors.red),
           );
-          Navigator.pop(context); // Quay lại TableListScreen
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('❌ Lỗi: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('❌ Lỗi: $e'), backgroundColor: Colors.red));
         }
       } finally {
-        if (mounted) {
-          setState(() => _isProcessing = false);
-        }
+        if (mounted) setState(() => _isProcessing = false);
       }
     }
   }
@@ -203,326 +178,259 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Bàn ${widget.tableNumber} - Chờ phục vụ',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: Consumer<OrderProvider>(
-        builder: (context, orderProvider, _) {
-          // Chỉ hiển thị order hiện tại (1 lần đặt hàng duy nhất)
-          final currentOrder = orderProvider.orders.firstWhere(
-            (o) => o.id == widget.order.id,
-            orElse: () => widget.order,
-          );
-          
-          // Wrap vào list để hiển thị như 1 order
-          final tableOrders = [currentOrder];
-          final cannotCancel = currentOrder.status == OrderStatus.completed ||
-              currentOrder.status == OrderStatus.served ||
-              currentOrder.status == OrderStatus.cancelled;
+      backgroundColor: _bgWarm,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: Consumer<OrderProvider>(
+                builder: (context, orderProvider, _) {
+                  final currentOrder = orderProvider.orders.firstWhere(
+                    (o) => o.id == widget.order.id,
+                    orElse: () => widget.order,
+                  );
+                  
+                  final cannotCancel = currentOrder.status == OrderStatus.completed ||
+                      currentOrder.status == OrderStatus.served ||
+                      currentOrder.status == OrderStatus.cancelled;
 
-          final Map<String, List<dynamic>> itemsByBatch = {};
-          for (final item in currentOrder.items) {
-            final batchId = (item.batchId.isEmpty) ? 'initial' : item.batchId;
-            (itemsByBatch[batchId] ??= []).add(item);
-          }
-          final batchKeys = itemsByBatch.keys.toList()
-            ..sort((a, b) {
-              if (a == 'initial' && b != 'initial') return -1;
-              if (b == 'initial' && a != 'initial') return 1;
-              final aTs = int.tryParse(a.startsWith('add_') ? a.substring(4) : a) ?? 0;
-              final bTs = int.tryParse(b.startsWith('add_') ? b.substring(4) : b) ?? 0;
-              return aTs.compareTo(bTs);
-            });
+                  final Map<String, List<dynamic>> itemsByBatch = {};
+                  for (final item in currentOrder.items) {
+                    final batchId = (item.batchId.isEmpty) ? 'initial' : item.batchId;
+                    (itemsByBatch[batchId] ??= []).add(item);
+                  }
+                  final batchKeys = itemsByBatch.keys.toList()
+                    ..sort((a, b) {
+                      if (a == 'initial' && b != 'initial') return -1;
+                      if (b == 'initial' && a != 'initial') return 1;
+                      final aTs = int.tryParse(a.startsWith('add_') ? a.substring(4) : a) ?? 0;
+                      final bTs = int.tryParse(b.startsWith('add_') ? b.substring(4) : b) ?? 0;
+                      return aTs.compareTo(bTs);
+                    });
 
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: batchKeys.length,
-                  itemBuilder: (_, i) {
-                    final batchId = batchKeys[i];
-                    final batchItems = itemsByBatch[batchId]!;
-                    final orderTotal = batchItems.fold<double>(
-                      0,
-                      (sum, item) => sum + item.subtotal,
-                    );
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: batchKeys.length,
+                          itemBuilder: (_, i) {
+                            final batchId = batchKeys[i];
+                            final batchItems = itemsByBatch[batchId]!;
+                            final orderTotal = batchItems.fold<double>(0, (sum, item) => sum + item.subtotal);
 
-                    // Trạng thái theo từng card/batch
-                    final batchStatus = currentOrder.batchStatus[batchId] ?? OrderStatus.pending;
-                    String statusLabel = '';
-                    Color statusColor = Colors.grey;
-                    if (batchStatus == OrderStatus.pending) {
-                      statusLabel = 'Chờ';
-                      statusColor = Colors.orange;
-                    } else if (batchStatus == OrderStatus.preparing) {
-                      statusLabel = 'Đang pha';
-                      statusColor = Colors.blue;
-                    } else if (batchStatus == OrderStatus.completed) {
-                      statusLabel = 'Hoàn thành';
-                      statusColor = Colors.green;
-                    }
+                            final batchStatus = currentOrder.batchStatus[batchId] ?? OrderStatus.pending;
+                            String statusLabel = '';
+                            Color statusColor = Colors.grey;
+                            Color statusBg = Colors.grey[100]!;
+                            if (batchStatus == OrderStatus.pending) {
+                              statusLabel = 'Chờ'; statusColor = const Color(0xFFD97706); statusBg = const Color(0xFFFEF3C7);
+                            } else if (batchStatus == OrderStatus.preparing) {
+                              statusLabel = 'Đang pha'; statusColor = const Color(0xFF2563EB); statusBg = const Color(0xFFDBEAFE);
+                            } else if (batchStatus == OrderStatus.completed) {
+                              statusLabel = 'Hoàn thành'; statusColor = const Color(0xFF059669); statusBg = const Color(0xFFD1FAE5);
+                            }
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Order header with ID and status
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Bill ${widget.order.id.substring(0, 6).toUpperCase()} • Lần ${(i + 1).toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: statusColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    statusLabel,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 12),
-                            // Items in this order
-                            ...batchItems.map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: _coffee100),
+                                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4))],
+                              ),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
-                                    child: Column(
+                                  // Order header
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Mã Bill #${widget.order.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _coffee900)),
+                                          Text('Lần ${(i + 1).toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(12)),
+                                        child: Text(statusLabel.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 0.5)),
+                                      ),
+                                    ],
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    child: Divider(height: 1, color: _coffee100),
+                                  ),
+                                  // Items
+                                  ...batchItems.map((item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          item.menuItemName,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(item.menuItemName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: _coffee900)),
+                                              const SizedBox(height: 2),
+                                              Text('${_formatPrice(item.unitPrice)}đ × ${item.quantity}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                            ],
                                           ),
                                         ),
-                                        Text(
-                                          '${_formatPrice(item.unitPrice)}đ × ${item.quantity}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
+                                        Text('${_formatPrice(item.subtotal)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _coffee600)),
                                       ],
                                     ),
+                                  )),
+                                  // Batch Total
+                                  const Padding(
+                                    padding: EdgeInsets.only(bottom: 12),
+                                    child: Divider(height: 1, color: _coffee100),
                                   ),
-                                  Text(
-                                    '${_formatPrice(item.subtotal)}đ',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: Color(0xFF2E7D32),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )),
-                            // Order total
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '${_formatPrice(orderTotal)}đ',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: Color(0xFF2E7D32),
-                                    ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Thành tiền', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
+                                      Text('${_formatPrice(orderTotal)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: _coffee900)),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
-                    );
-                  },
-                ),
+                      // Bottom bar
+                      _buildBottomActions([currentOrder], cannotCancel),
+                    ],
+                  );
+                },
               ),
-              // Bottom summary and action buttons
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2E7D32),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tổng: ${tableOrders.fold<int>(0, (sum, o) => sum + o.items.length)} món',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          '${_formatPrice(tableOrders.fold<double>(0, (sum, o) => sum + o.items.fold<double>(0, (s, item) => s + item.subtotal)))}đ',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.add_circle_outline,
-                              color: Color(0xFF2E7D32),
-                            ),
-                            label: const Text(
-                              'Đặt thêm',
-                              style: TextStyle(
-                                color: Color(0xFF2E7D32),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            onPressed: _isProcessing ? null : _onAddMore,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ButtonStyle(
-                              padding: WidgetStateProperty.all(
-                                const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              backgroundColor: WidgetStateProperty.resolveWith<Color?>(
-                                (states) {
-                                  if (states.contains(WidgetState.disabled)) {
-                                    return Colors.black;
-                                  }
-                                  return Colors.red[100];
-                                },
-                              ),
-                              foregroundColor: WidgetStateProperty.resolveWith<Color?>(
-                                (states) {
-                                  if (states.contains(WidgetState.disabled)) {
-                                    return Colors.white;
-                                  }
-                                  return Colors.red;
-                                },
-                              ),
-                              iconColor: WidgetStateProperty.resolveWith<Color?>(
-                                (states) {
-                                  if (states.contains(WidgetState.disabled)) {
-                                    return Colors.white;
-                                  }
-                                  return Colors.red;
-                                },
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.close_outlined,
-                            ),
-                            label: const Text(
-                              'Hủy đơn',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: (_isProcessing || cannotCancel) ? null : _onCancelOrder,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              disabledBackgroundColor: Colors.grey[300],
-                            ),
-                            icon: Icon(
-                              Icons.check_circle_outline,
-                              color: tableOrders.every((o) => o.status == OrderStatus.completed)
-                                  ? const Color(0xFF2E7D32)
-                                  : Colors.grey,
-                            ),
-                            label: Text(
-                              'Đã phục vụ',
-                              style: TextStyle(
-                                color: tableOrders.every((o) => o.status == OrderStatus.completed)
-                                    ? const Color(0xFF2E7D32)
-                                    : Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            // Chỉ enable khi TẤT CẢ orders đã hoàn thành
-                            onPressed: (tableOrders.isNotEmpty && tableOrders.every((o) => o.status == OrderStatus.completed) && !_isProcessing)
-                                ? _onServed
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // ── HEADER ──
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: _coffee100)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: _coffee900),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('CHI TIẾT ĐƠN ĐANG CHỜ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
+              Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── BOTTOM ACTIONS ──
+  Widget _buildBottomActions(List<OrderModel> tableOrders, bool cannotCancel) {
+    if (tableOrders.isEmpty) return const SizedBox.shrink();
+    
+    final totalItems = tableOrders.fold<int>(0, (sum, o) => sum + o.items.length);
+    final totalPrice = tableOrders.fold<double>(0, (sum, o) => sum + o.items.fold<double>(0, (s, item) => s + item.subtotal));
+    final isAllCompleted = tableOrders.every((o) => o.status == OrderStatus.completed);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Tổng cộng', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text('$totalItems món', style: const TextStyle(color: _coffee600, fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+              Text('${_formatPrice(totalPrice)}đ', style: const TextStyle(color: _coffee900, fontWeight: FontWeight.bold, fontSize: 22)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Nút Đặt thêm
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _coffee50,
+                    foregroundColor: _coffee600,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: _isProcessing ? null : _onAddMore,
+                  child: const Text('+ Thêm món', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Nút Hủy
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[50],
+                    foregroundColor: Colors.red,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: (_isProcessing || cannotCancel) ? null : _onCancelOrder,
+                  child: const Text('Hủy đơn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Nút Phục vụ
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isAllCompleted ? const Color(0xFF059669) : Colors.grey[300],
+                    foregroundColor: Colors.white,
+                    elevation: isAllCompleted ? 2 : 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  label: const Text('Đã phục vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: (isAllCompleted && !_isProcessing) ? _onServed : null,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const _coffee50 = Color(0xFFFDF8F6);
 }

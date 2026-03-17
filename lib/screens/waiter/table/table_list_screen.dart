@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/table_provider.dart';
 import '../../../providers/order_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../routes/app_routes.dart';
 import '../../waiter/order/create_order_screen.dart';
 import '../../waiter/order/order_detail_screen.dart';
 import '../../waiter/order/served_order_screen.dart';
@@ -14,28 +16,37 @@ class TableListScreen extends StatefulWidget {
 }
 
 class _TableListScreenState extends State<TableListScreen> {
+  // Theme colors based on the HTML template
+  static const _bgWarm = Color(0xFFFDF8F6);
+  static const _coffee100 = Color(0xFFF2E8E5);
+  static const _coffee200 = Color(0xFFEADDD7);
+  static const _coffee600 = Color(0xFF8C634F);
+  static const _coffee900 = Color(0xFF4A332D);
+
+  // Status colors
+  static const _emptyColor = Color(0xFF10B981);
+  static const _emptyBg = Color(0xFFECFDF5);
+  static const _emptyLabelBg = Color(0xFFD1FAE5);
+  static const _emptyLabelText = Color(0xFF047857);
+
+  static const _waitingColor = Color(0xFF3B82F6);
+  static const _waitingBg = Color(0xFFEFF6FF);
+  static const _waitingLabelBg = Color(0xFFDBEAFE);
+  static const _waitingLabelText = Color(0xFF1D4ED8);
+
+  static const _servingColor = Color(0xFFEF4444);
+  static const _servingBg = Color(0xFFFEF2F2);
+  static const _servingLabelBg = Color(0xFFFEE2E2);
+  static const _servingLabelText = Color(0xFFB91C1C);
+
   @override
   void initState() {
     super.initState();
-    // ✅ Fetch tables từ Firebase khi mở screen
+    // Fetch tables từ Firebase khi mở screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TableProvider>(context, listen: false).fetchTables();
     });
   }
-
-  Color _statusColor(String s) => switch (s) {
-    'available' => const Color(0xFF27AE60),
-    'occupied' => Colors.red,
-    'waiting' => const Color(0xFF0056B3),
-    _ => Colors.grey,
-  };
-
-  String _statusLabel(String s) => switch (s) {
-    'available' => 'Trống',
-    'occupied' => 'Đang phục vụ',
-    'waiting' => 'Chờ phục vụ',
-    _ => s,
-  };
 
   void _onTableTap(Map<String, dynamic> table) {
     final status = table['status'] as String;
@@ -44,42 +55,24 @@ class _TableListScreenState extends State<TableListScreen> {
         builder: (_) => CreateOrderScreen(tableId: table['id'], tableNumber: table['number'] as int),
       ));
     } else if (status == 'waiting') {
-      // Mở màn hình chi tiết order
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
       final tableOrders = orderProvider.ordersByTable(table['id']);
       
       if (tableOrders.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không có order nào cho bàn này'),
-            backgroundColor: Colors.orange,
-          ),
+          const SnackBar(content: Text('Không có order nào cho bàn này'), backgroundColor: Colors.orange),
         );
         return;
       }
 
       final order = tableOrders.first;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OrderDetailScreen(
-            order: order,
-            tableId: table['id'],
-            tableNumber: table['number'] as int,
-          ),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => OrderDetailScreen(order: order, tableId: table['id'], tableNumber: table['number'] as int),
+      ));
     } else if (status == 'occupied') {
-      // Mở màn hình chi tiết order đang phục vụ
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ServedOrderScreen(
-            tableId: table['id'],
-            tableNumber: table['number'] as int,
-          ),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => ServedOrderScreen(tableId: table['id'], tableNumber: table['number'] as int),
+      ));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Bàn ${table['number']} không khả dụng'), backgroundColor: Colors.orange),
@@ -87,12 +80,8 @@ class _TableListScreenState extends State<TableListScreen> {
     }
   }
 
-  String _formatPrice(double amount) =>
-      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-
   @override
   Widget build(BuildContext context) {
-    // ✅ Dùng Consumer để lấy data từ TableProvider
     return Consumer2<TableProvider, OrderProvider>(
       builder: (context, tableProvider, orderProvider, child) {
         final tables = tableProvider.tables;
@@ -101,21 +90,15 @@ class _TableListScreenState extends State<TableListScreen> {
         final waiting = tables.where((t) => t.status.toString().split('.').last == 'waiting').length;
 
         if (tableProvider.isLoading) {
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF2E7D32),
-              title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-            body: const Center(child: CircularProgressIndicator()),
+          return const Scaffold(
+            backgroundColor: _bgWarm,
+            body: Center(child: CircularProgressIndicator(color: _coffee600)),
           );
         }
 
         if (tableProvider.error != null) {
           return Scaffold(
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF2E7D32),
-              title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
+            backgroundColor: _bgWarm,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -125,6 +108,7 @@ class _TableListScreenState extends State<TableListScreen> {
                   Text('❌ ${tableProvider.error}'),
                   const SizedBox(height: 16),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: _coffee600, foregroundColor: Colors.white),
                     onPressed: () => tableProvider.fetchTables(),
                     child: const Text('Thử lại'),
                   ),
@@ -135,59 +119,143 @@ class _TableListScreenState extends State<TableListScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF0F9F0),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF2E7D32),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+          backgroundColor: _bgWarm,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatusSummary(available, waiting, occupied),
+                        const SizedBox(height: 24),
+                        _buildGrid(tables),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            title: const Text('Chọn Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-          body: Column(
-            children: [
-              _buildLegendBar(available, waiting, occupied),
-              Expanded(child: _buildGrid(tables)),
-            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildLegendBar(int available, int waiting, int occupied) {
+  // ── HEADER TOP NAV ──
+  Widget _buildHeader(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userName = authProvider.currentUser?.name ?? 'Nhân viên';
+
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        border: Border(bottom: BorderSide(color: _coffee100)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _LegendItem(color: const Color(0xFF27AE60), label: 'Trống ($available)'),
-          _LegendItem(color: const Color(0xFF0056B3), label: 'Chờ phục vụ ($waiting)'),
-          _LegendItem(color: Colors.red, label: 'Đang phục vụ ($occupied)'),
-          
+          Row(
+            children: [
+              // Avatar
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _coffee200,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _coffee100, width: 2),
+                ),
+                child: const Icon(Icons.person_rounded, color: _coffee600, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'NHÂN VIÊN PHỤC VỤ',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5),
+                  ),
+                  Text(
+                    userName,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Nút Đăng xuất
+          IconButton(
+            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+            icon: const Icon(Icons.logout_rounded, color: Colors.grey),
+          ),
         ],
       ),
     );
   }
 
+  // ── STATUS SUMMARY FILTER ──
+  Widget _buildStatusSummary(int available, int waiting, int serving) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _coffee100),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildSummaryItem(available, 'Trống', _emptyColor),
+          Container(width: 1, height: 32, color: _coffee100),
+          _buildSummaryItem(waiting, 'Chờ', _waitingColor),
+          Container(width: 1, height: 32, color: _coffee100),
+          _buildSummaryItem(serving, 'Phục vụ', _servingColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(int count, String label, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(count.toString().padLeft(2, '0'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Text(label.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── GRID OF TABLES ──
   Widget _buildGrid(List tables) {
-    // ✅ Sắp xếp tables theo thứ tự bàn (1, 2, 3, ...)
     final sortedTables = [...tables];
     sortedTables.sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
     
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.1,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.9, // Adjust height
       ),
       itemCount: sortedTables.length,
       itemBuilder: (_, i) => _buildTableCard(sortedTables[i]),
@@ -195,73 +263,92 @@ class _TableListScreenState extends State<TableListScreen> {
   }
 
   Widget _buildTableCard(dynamic tableModel) {
-    // ✅ Chuyển đổi TableModel → thông tin hiển thị
     final statusStr = tableModel.status.toString().split('.').last;
-    final color = _statusColor(statusStr);
     final isAvailable = statusStr == 'available';
+    final isWaiting = statusStr == 'waiting';
+    final isOccupied = statusStr == 'occupied';
+
+    Color themeColor = Colors.grey;
+    Color bgLight = Colors.grey[100]!;
+    Color labelBg = Colors.grey[200]!;
+    Color labelText = Colors.grey[700]!;
+    String statusLabel = 'Không rõ';
+    IconData iconData = Icons.table_bar_rounded;
+    String subText = '';
+
+    if (isAvailable) {
+      themeColor = _emptyColor; bgLight = _emptyBg; labelBg = _emptyLabelBg; labelText = _emptyLabelText;
+      statusLabel = 'Trống'; iconData = Icons.chair_alt_rounded; subText = 'Nhấn để tạo đơn';
+    } else if (isWaiting) {
+      themeColor = _waitingColor; bgLight = _waitingBg; labelBg = _waitingLabelBg; labelText = _waitingLabelText;
+      statusLabel = 'Đang chờ'; iconData = Icons.access_time_filled_rounded; subText = 'Vừa được đặt';
+    } else if (isOccupied) {
+      themeColor = _servingColor; bgLight = _servingBg; labelBg = _servingLabelBg; labelText = _servingLabelText;
+      statusLabel = 'Phục vụ'; iconData = Icons.restaurant_menu_rounded; subText = 'Đang dùng bữa...';
+    }
 
     return Material(
-      color: isAvailable ? color.withValues(alpha: 0.08) : color.withValues(alpha: 0.05),
-      borderRadius: BorderRadius.circular(16),
-      elevation: isAvailable ? 2 : 1,
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         onTap: () => _onTableTap({
           'id': tableModel.id,
           'number': tableModel.tableNumber,
           'status': statusStr,
         }),
         child: Container(
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _coffee100),
           ),
-          padding: const EdgeInsets.all(14),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.table_bar, size: 36, color: color),
-              const SizedBox(height: 8),
-              Text('Bàn ${tableModel.tableNumber}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-              const SizedBox(height: 4),
+              // Top row: Label & capacity
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.people_outline, size: 12, color: color.withValues(alpha: 0.7)),
-                  const SizedBox(width: 3),
-                  Text('${tableModel.capacity} chỗ', style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.7))),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: labelBg, borderRadius: BorderRadius.circular(12)),
+                    child: Text(
+                      statusLabel.toUpperCase(),
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: labelText, letterSpacing: 0.5),
+                    ),
+                  ),
+                  Text('${tableModel.capacity} chỗ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[400])),
                 ],
               ),
-              const SizedBox(height: 6),
+              const Spacer(),
+              // Icon Circle
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
-                child: Text(_statusLabel(statusStr), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+                width: 60, height: 60,
+                decoration: BoxDecoration(color: bgLight, shape: BoxShape.circle),
+                child: Icon(iconData, size: 28, color: themeColor),
               ),
-              if (isAvailable) ...[
-                const SizedBox(height: 6),
-                const Text('Nhấn để tạo order', style: TextStyle(fontSize: 9, color: Color(0xFF4CAF50))),
-              ],
+              const SizedBox(height: 12),
+              // Table Name
+              Text(
+                'Bàn ${tableModel.tableNumber.toString().padLeft(2, '0')}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _coffee900),
+              ),
+              const SizedBox(height: 4),
+              // Sub text
+              Text(
+                subText,
+                style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey[400]),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendItem({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 5),
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF555555))),
-    ],
-  );
 }

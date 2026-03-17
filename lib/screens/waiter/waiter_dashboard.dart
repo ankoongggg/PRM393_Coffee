@@ -10,6 +10,7 @@ class WaiterDashboard extends StatelessWidget {
       backgroundColor: const Color(0xFFF1F8E9),
       appBar: AppBar(
         backgroundColor: const Color(0xFF2E7D32),
+        automaticallyImplyLeading: false,
         title: const Text('🧑‍💼 Nhân viên phục vụ', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(

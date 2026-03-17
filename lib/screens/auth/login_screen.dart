@@ -11,13 +11,73 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   UserRole? _selectedRole;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  late AnimationController _staggerController;
+  late List<Animation<double>> _staggerAnimations;
+
+  // ── Màu sắc theo template HTML ──
+  static const _coffeeDark = Color(0xFF3E2723);
+  static const _coffeeMedium = Color(0xFF6F4E37);
+  static const _coffeeLight = Color(0xFFD7CCC8);
+  static const _coffeeCream = Color(0xFFF5F5DC);
+  static const _coffeeAccent = Color(0xFF606C38);
+  static const _bgColor = Color(0xFFFDFBF7);
+
+  // Dữ liệu vai trò theo template
+  static const _roleData = <UserRole, _RoleInfo>{
+    UserRole.manager: _RoleInfo(
+      icon: Icons.bar_chart_rounded,
+      title: 'Quản lý',
+      subtitle: 'Quản lý menu, bàn & doanh thu',
+      iconBgColor: _coffeeDark,
+    ),
+    UserRole.waiter: _RoleInfo(
+      icon: Icons.card_giftcard_rounded,
+      title: 'Nhân viên phục vụ',
+      subtitle: 'Ghi order & phục vụ khách hàng',
+      iconBgColor: _coffeeAccent,
+    ),
+    UserRole.barista: _RoleInfo(
+      icon: Icons.science_rounded,
+      title: 'Barista',
+      subtitle: 'Pha chế & quản lý đơn hàng',
+      iconBgColor: _coffeeMedium,
+    ),
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _staggerController = AnimationController(
+      duration: const Duration(milliseconds: 900),
+      vsync: this,
+    );
+    _staggerAnimations = List.generate(3, (index) {
+      final start = index * 0.2;
+      final end = start + 0.6;
+      return CurvedAnimation(
+        parent: _staggerController,
+        curve: Interval(start, end.clamp(0.0, 1.0), curve: Curves.easeOutBack),
+      );
+    });
+    _staggerController.forward();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _staggerController.dispose();
+    super.dispose();
+  }
 
   void _handleLogin() async {
     if (_formKey.currentState!.validate() && _selectedRole != null) {
@@ -33,13 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (success && mounted) {
-        // Chuyển hướng dựa trên Role
         switch (_selectedRole!) {
           case UserRole.manager:
             Navigator.pushReplacementNamed(context, AppRoutes.managerDashboard);
             break;
           case UserRole.waiter:
-            Navigator.pushReplacementNamed(context, AppRoutes.waiterDashboard);
+            Navigator.pushReplacementNamed(context, AppRoutes.waiterTables);
             break;
           case UserRole.barista:
             Navigator.pushReplacementNamed(context, AppRoutes.baristaDashboard);
@@ -50,6 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Text(authProvider.errorMessage ?? 'Đăng nhập thất bại'),
             backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -57,239 +118,431 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6F4E37),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6F4E37).withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
+      backgroundColor: _bgColor,
+      body: Stack(
+        children: [
+          // ── Decorative blur circles (giống template) ──
+          Positioned(
+            top: -96,
+            right: -96,
+            child: Container(
+              width: 256,
+              height: 256,
+              decoration: BoxDecoration(
+                color: _coffeeLight.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -96,
+            left: -96,
+            child: Container(
+              width: 256,
+              height: 256,
+              decoration: BoxDecoration(
+                color: _coffeeAccent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // ── Nội dung chính ──
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 448),
+                  child: Column(
+                    children: [
+                      // ── Hero Section ──
+                      _buildHeroSection(),
+
+                      // ── Role Selection / Login Form ──
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0.0, 0.06),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOut,
+                              )),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _selectedRole == null
+                            ? _buildRoleSelection()
+                            : _buildLoginForm(),
                       ),
+
+                      // ── Footer ──
+                      _buildFooter(),
                     ],
                   ),
-                  child: const Icon(Icons.coffee, size: 52, color: Colors.white),
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'PRM393 Coffee',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C1A0E),
-                  ),
-                ),
-                const SizedBox(height: 32),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                // Hiệu ứng chuyển đổi giữa Chọn Role và Form Đăng nhập
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0.0, 0.1),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: _selectedRole == null
-                      ? _buildRoleSelection()
-                      : _buildLoginForm(),
+  // ── HERO SECTION ──
+  Widget _buildHeroSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+      child: Column(
+        children: [
+          // Logo - circle với ring giống template
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: _coffeeDark,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: _coffeeDark.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
+              border: Border.all(
+                color: _coffeeLight.withValues(alpha: 0.2),
+                width: 8,
+              ),
             ),
+            child: const Icon(Icons.coffee_rounded, size: 44, color: Color(0xFFF5F5DC)),
+          ),
+          const SizedBox(height: 24),
+
+          // Title
+          const Text(
+            'PRM393 Coffee',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: _coffeeDark,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Subtitle
+          Text(
+            'HỆ THỐNG QUẢN LÝ QUÁN CÀ PHÊ',
+            style: TextStyle(
+              fontSize: 11,
+              color: _coffeeMedium.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Divider line
+          Container(
+            width: 48,
+            height: 4,
+            decoration: BoxDecoration(
+              color: _coffeeAccent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── ROLE SELECTION ──
+  Widget _buildRoleSelection() {
+    return Padding(
+      key: const ValueKey('RoleSelection'),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'Chọn vai trò để đăng nhập',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: _coffeeDark,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Role cards
+          ...UserRole.values.asMap().entries.map((entry) {
+            final index = entry.key;
+            final role = entry.value;
+            final info = _roleData[role]!;
+
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(_staggerAnimations[index]),
+              child: FadeTransition(
+                opacity: _staggerAnimations[index],
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _RoleCard(
+                    icon: info.icon,
+                    title: info.title,
+                    subtitle: info.subtitle,
+                    iconBgColor: info.iconBgColor,
+                    onTap: () {
+                      setState(() {
+                        _selectedRole = role;
+                        _emailController.clear();
+                        _passwordController.clear();
+                      });
+                    },
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ── LOGIN FORM ──
+  Widget _buildLoginForm() {
+    final info = _roleData[_selectedRole]!;
+
+    return Padding(
+      key: const ValueKey('LoginForm'),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Form(
+        key: _formKey,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: _coffeeLight.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  // Back button
+                  InkWell(
+                    onTap: () {
+                      setState(() => _selectedRole = null);
+                      _staggerController.reset();
+                      _staggerController.forward();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _coffeeMedium.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.arrow_back_rounded, color: _coffeeMedium, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Đăng nhập',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _coffeeDark,
+                          ),
+                        ),
+                        Text(
+                          info.title,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: info.iconBgColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: info.iconBgColor,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(info.icon, color: Colors.white, size: 22),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+
+              // Email
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _inputDecoration(label: 'Email', icon: Icons.email_outlined),
+                validator: (value) => value!.isEmpty ? 'Vui lòng nhập email' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Password
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: _inputDecoration(label: 'Mật khẩu', icon: Icons.lock_outline_rounded).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                      color: const Color(0xFF9E7B5A),
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                validator: (value) => value!.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
+              ),
+              const SizedBox(height: 28),
+
+              // Login button
+              Container(
+                decoration: BoxDecoration(
+                  color: info.iconBgColor,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: info.iconBgColor.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Đăng nhập', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // --- 1. MÀN HÌNH CHỌN ROLE ---
-  Widget _buildRoleSelection() {
-    return Column(
-      key: const ValueKey('RoleSelection'),
-      children: [
-        const Text(
-          'Chọn vai trò để đăng nhập',
-          style: TextStyle(fontSize: 14, color: Color(0xFF9E7B5A)),
-        ),
-        const SizedBox(height: 24),
-        ...UserRole.values.map((role) {
-          Color roleColor;
-          switch (role) {
-            case UserRole.manager:
-              roleColor = const Color(0xFF6F4E37);
-              break;
-            case UserRole.waiter:
-              roleColor = const Color(0xFF2E7D32);
-              break;
-            case UserRole.barista:
-              roleColor = const Color(0xFF1565C0);
-              break;
-          }
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _RoleButton(
-              icon: role.icon,
-              title: role.displayName,
-              color: roleColor,
-              onTap: () {
-                setState(() {
-                  _selectedRole = role;
-                  // Reset form khi đổi role
-                  _emailController.clear();
-                  _passwordController.clear();
-                });
-              },
+  // ── FOOTER ──
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        children: [
+          Text(
+            '© 2024 PRM393 Coffee Management System',
+            style: TextStyle(
+              fontSize: 11,
+              color: _coffeeMedium.withValues(alpha: 0.5),
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'V 2.1.0 PREMIUM DESIGN',
+            style: TextStyle(
+              fontSize: 9,
+              color: _coffeeMedium.withValues(alpha: 0.4),
+              letterSpacing: 1,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // --- 2. MÀN HÌNH FORM ĐĂNG NHẬP ---
-  Widget _buildLoginForm() {
-    return Form(
-      key: _formKey,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF6F4E37)),
-                  onPressed: () => setState(() => _selectedRole = null),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Đăng nhập ${_selectedRole!.displayName}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2C1A0E),
-                    ),
-                  ),
-                ),
-                Text(
-                  _selectedRole!.icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF6F4E37), width: 2),
-                ),
-              ),
-              validator: (value) => value!.isEmpty ? 'Vui lòng nhập email' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Mật khẩu',
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF6F4E37), width: 2),
-                ),
-              ),
-              validator: (value) => value!.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6F4E37),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text('Đăng nhập', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
+  InputDecoration _inputDecoration({required String label, required IconData icon}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFF9E7B5A), fontWeight: FontWeight.w500),
+      prefixIcon: Icon(icon, color: const Color(0xFF9E7B5A), size: 20),
+      filled: true,
+      fillColor: const Color(0xFFFAF6F1),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: _coffeeMedium.withValues(alpha: 0.1)),
       ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _coffeeMedium, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 }
 
-class _RoleButton extends StatelessWidget {
-  final String icon;
+// ── Dữ liệu vai trò ──
+class _RoleInfo {
+  final IconData icon;
   final String title;
-  final Color color;
-  final VoidCallback onTap;
+  final String subtitle;
+  final Color iconBgColor;
 
-  const _RoleButton({
+  const _RoleInfo({
     required this.icon,
     required this.title,
-    required this.color,
+    required this.subtitle,
+    required this.iconBgColor,
+  });
+}
+
+// ── Role Card widget theo template HTML ──
+class _RoleCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color iconBgColor;
+  final VoidCallback onTap;
+
+  const _RoleCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.iconBgColor,
     required this.onTap,
   });
 
@@ -297,42 +550,73 @@ class _RoleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      // Đã xóa dòng borderRadius ở đây để không bị xung đột với shape bên dưới
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: color.withValues(alpha: 0.2), width: 1),
-      ),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        splashColor: iconBgColor.withValues(alpha: 0.08),
+        highlightColor: const Color(0xFFF5F5DC),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFD7CCC8).withValues(alpha: 0.3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
+              // Icon container
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: iconBgColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Text(icon, style: const TextStyle(fontSize: 24)),
-                ),
+                child: Icon(icon, size: 24, color: Colors.white),
               ),
               const SizedBox(width: 16),
+
+              // Text
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF3E2723),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: const Color(0xFF6F4E37).withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, size: 16, color: color.withValues(alpha: 0.5)),
+
+              // Arrow icon
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: const Color(0xFF606C38),
+              ),
             ],
           ),
         ),

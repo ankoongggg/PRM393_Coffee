@@ -10,6 +10,7 @@ class BaristaDashboard extends StatelessWidget {
       backgroundColor: const Color(0xFFE3F2FD),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1565C0),
+        automaticallyImplyLeading: false,
         title: const Text('☕ Barista', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(

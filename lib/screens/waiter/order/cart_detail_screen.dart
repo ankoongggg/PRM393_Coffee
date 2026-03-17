@@ -30,6 +30,15 @@ class CartDetailScreen extends StatefulWidget {
 }
 
 class _CartDetailScreenState extends State<CartDetailScreen> {
+  // Theme colors based on the HTML template
+  static const _bgWarm = Color(0xFFFDF8F6);
+  static const _coffee50 = Color(0xFFFDF8F6);
+  static const _coffee100 = Color(0xFFF2E8E5);
+  static const _coffee200 = Color(0xFFEADDD7);
+  static const _coffee600 = Color(0xFF8C634F);
+  static const _coffee900 = Color(0xFF4A332D);
+  static const _emerald600 = Color(0xFF059669);
+
   late Map<String, int> _cart;
 
   @override
@@ -72,24 +81,29 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text('Xác nhận gửi order?'),
-        content: Text('Bàn ${widget.tableNumber}: $_totalItems món\nTổng: ${_formatPrice(_totalPrice)}đ'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Xác nhận gửi order?', style: TextStyle(color: _coffee900, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Bàn ${widget.tableNumber}: $_totalItems món\nTổng: ${_formatPrice(_totalPrice)}đ',
+          style: const TextStyle(color: _coffee600, fontSize: 16),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: _coffee600,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () async {
               Navigator.pop(dialogContext);
               _processOrderSubmission();
             },
-            child: const Text('Xác nhận', style: TextStyle(color: Colors.white)),
+            child: const Text('Xác nhận', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -134,23 +148,20 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     bool isSuccess = false;
 
     try {
-      // ✅ LOGIC CHỐNG BỊP TIỀN: Chỉ cộng dồn nếu đơn đang "Mở"
       if (existingOrder != null &&
           existingOrder.status != OrderStatus.completed &&
           existingOrder.status != OrderStatus.cancelled) {
-
-        // TRƯỜNG HỢP 1: Cộng dồn vào đơn hiện có
+        
+        // Cộng dồn
         isSuccess = await orderProvider.addItemsToExistingOrder(
           orderId: existingOrder.id,
           newItems: orderItems,
         );
-
-        // Đẩy về 'pending' nếu đang 'preparing' để Barista thấy món mới
         if (isSuccess && existingOrder.status == OrderStatus.preparing) {
           await orderProvider.updateOrderStatus(existingOrder.id, OrderStatus.pending);
         }
       } else {
-        // TRƯỜNG HỢP 2: Tạo đơn mới (Vì đơn cũ đã chốt hoặc bàn trống)
+        // Tạo mới
         final newId = await orderProvider.createOrder(
           tableId: widget.tableId,
           tableNumber: widget.tableNumber,
@@ -168,13 +179,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       if (isSuccess && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('✅ Đã gửi đơn hàng thành công!'),
-              backgroundColor: Color(0xFF2E7D32),
-              behavior: SnackBarBehavior.floating
+            content: Text('✅ Đã gửi đơn hàng thành công!'),
+            backgroundColor: _coffee600,
+            behavior: SnackBarBehavior.floating
           ),
         );
-        Navigator.pop(context);
-        Navigator.pop(context);
+        Navigator.pop(context); // close cart
+        Navigator.pop(context); // close menu back to table list
       }
     } catch (e) {
       if (mounted) {
@@ -190,89 +201,173 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     final menuProvider = Provider.of<MenuProvider>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F9F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
-        elevation: 0,
-        title: Text('Giỏ hàng - Bàn ${widget.tableNumber}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+      backgroundColor: _bgWarm,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: _cart.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_cart_outlined, size: 64, color: _coffee200),
+                          const SizedBox(height: 16),
+                          const Text('Giỏ hàng trống', style: TextStyle(color: _coffee600, fontSize: 16)),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _cart.length,
+                      itemBuilder: (_, i) {
+                        final itemId = _cart.keys.elementAt(i);
+                        final quantity = _cart[itemId]!;
+                        final item = menuProvider.menuItems.firstWhere((m) => m.id == itemId);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _coffee100),
+                          ),
+                          child: Row(
+                            children: [
+                              // Hình ảnh thu nhỏ
+                              Container(
+                                width: 64, height: 64,
+                                decoration: BoxDecoration(
+                                  color: _coffee100,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: item.imageUrl.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Image.network(item.imageUrl, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.local_cafe_rounded, color: _coffee200)),
+                                      )
+                                    : const Icon(Icons.local_cafe_rounded, color: _coffee200),
+                              ),
+                              const SizedBox(width: 16),
+                              // Thông tin món ăn
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                    const SizedBox(height: 4),
+                                    Text('${_formatPrice(item.price)}đ', style: const TextStyle(fontSize: 13, color: _emerald600, fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                              // Nút điều chỉnh số lượng hình dọc
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: _coffee50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: _coffee200),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove, size: 16),
+                                      color: _coffee600,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
+                                      onPressed: () => _decrement(itemId),
+                                    ),
+                                    Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _coffee900)),
+                                    IconButton(
+                                      icon: const Icon(Icons.add, size: 16),
+                                      color: _coffee600,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
+                                      onPressed: () => _increment(itemId),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            if (_cart.isNotEmpty) _buildBottomBar(),
+          ],
         ),
       ),
-      body: _cart.isEmpty
-          ? const Center(child: Text('Giỏ hàng trống'))
-          : Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _cart.length,
-              itemBuilder: (_, i) {
-                final itemId = _cart.keys.elementAt(i);
-                final quantity = _cart[itemId]!;
-                final item = menuProvider.menuItems.firstWhere((m) => m.id == itemId);
+    );
+  }
 
-                return Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(10),
-                    leading: Container(
-                      width: 50, height: 50,
-                      decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.local_cafe, color: Color(0xFF2E7D32)),
-                    ),
-                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${_formatPrice(item.price)}đ', style: const TextStyle(color: Color(0xFF2E7D32))),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red), onPressed: () => _decrement(itemId)),
-                        Text('$quantity', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        IconButton(icon: const Icon(Icons.add_circle_outline, color: Colors.green), onPressed: () => _increment(itemId)),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+  // ── HEADER ──
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: _coffee100)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: _coffee900),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('GIỎ HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
+                  Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+                ],
+              ),
+            ],
           ),
-          _buildBottomBar(),
         ],
       ),
     );
   }
 
+  // ── BOTTOM SUM BAR ──
   Widget _buildBottomBar() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Row tính tiền
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Tổng cộng:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32))),
+              const Text('Tổng cộng', style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w600)),
+              Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _coffee900)),
             ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
+          // Nút xác nhận
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 54,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                backgroundColor: _coffee600,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
               onPressed: _submitOrder,
-              child: const Text('GỬI ORDER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text('GỬI ORDER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1)),
             ),
           ),
         ],
