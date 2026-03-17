@@ -16,12 +16,12 @@ import '../screens/manager/order_management/order_list_screen.dart';
 import '../screens/manager/order_management/order_detail_screen.dart';
 import '../screens/manager/report/report_screen.dart';
 import '../screens/manager/account_management_screen.dart';
-import '../screens/waiter/waiter_dashboard.dart';
+
 import '../screens/waiter/table/table_list_screen.dart';
 import '../screens/waiter/order/create_order_screen.dart';
 import '../screens/waiter/order/cart_detail_screen.dart';
 import '../screens/waiter/order/order_tracking_screen.dart';
-import '../screens/barista/barista_dashboard.dart';
+
 import '../screens/barista/order_queue_screen.dart';
 
 class AppRouter {
@@ -63,8 +63,6 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const AccountManagementScreen());
 
       // ── Waiter ───────────────────────────────────────────────
-      case AppRoutes.waiterDashboard:
-        return MaterialPageRoute(builder: (_) => const WaiterDashboard());
       case AppRoutes.waiterTables:
         return MaterialPageRoute(builder: (_) => const TableListScreen());
       case AppRoutes.waiterCreateOrder:
@@ -91,8 +89,6 @@ class AppRouter {
         );
 
       // ── Barista ──────────────────────────────────────────────
-      case AppRoutes.baristaDashboard:
-        return MaterialPageRoute(builder: (_) => const BaristaDashboard());
       case AppRoutes.baristaOrders:
         return MaterialPageRoute(builder: (_) => const OrderQueueScreen());
 
@@ -104,7 +100,7 @@ class AppRouter {
   /// Trả về route khởi đầu theo role sau khi đăng nhập
   static String initialRouteFor(UserRole role) => switch (role) {
         UserRole.manager  => AppRoutes.managerDashboard,
-        UserRole.waiter   => AppRoutes.waiterDashboard,
-        UserRole.barista  => AppRoutes.baristaDashboard,
+        UserRole.waiter   => AppRoutes.waiterTables,
+        UserRole.barista  => AppRoutes.baristaOrders,
       };
 }
