@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen>
             Navigator.pushReplacementNamed(context, AppRoutes.waiterTables);
             break;
           case UserRole.barista:
-            Navigator.pushReplacementNamed(context, AppRoutes.baristaDashboard);
+            Navigator.pushReplacementNamed(context, AppRoutes.baristaOrders);
             break;
         }
       } else if (mounted) {
