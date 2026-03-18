@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/table_provider.dart';
+import '../../../routes/app_routes.dart';
+import '../manager_navigation_bar.dart';
 import 'table_orders_screen.dart';
 
 class TableManagementScreen extends StatefulWidget {
@@ -11,6 +13,8 @@ class TableManagementScreen extends StatefulWidget {
 }
 
 class _TableManagementScreenState extends State<TableManagementScreen> {
+  int _selectedNavIndex = 1; // TABLES tab
+
   @override
   void initState() {
     super.initState();
@@ -64,25 +68,33 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
         final occupiedCount = tables.where((t) => t.status.toString().split('.').last == 'occupied').length;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFAF6F1),
+          backgroundColor: const Color(0xFFFBF9F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFFFBF9F5),
+            elevation: 0,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text('Quản lý Bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: const Text('Quản lý Bàn', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
                 onPressed: () => tableProvider.startTableListener(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+                tooltip: 'Đăng xuất',
+                onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
               ),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFF361F1A),
+            elevation: 4,
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Thêm bàn', style: TextStyle(color: Colors.white)),
+            label: const Text('Thêm bàn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () => _showAddEditDialog(context),
           ),
           body: Column(
@@ -96,6 +108,11 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
               Expanded(child: _buildTableGrid(tables)),
             ],
           ),
+          bottomNavigationBar: buildManagerBottomNavigation(
+            context: context,
+            selectedIndex: _selectedNavIndex,
+            onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
+          ),
         );
       },
     );
@@ -104,16 +121,17 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   Widget _buildStatusBar(int available, int occupied, int total) {
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _StatItem(value: '$total', label: 'Tổng số bàn', color: const Color(0xFF6F4E37)),
+          _StatItem(value: '$total', label: 'Tổng số bàn', color: const Color(0xFF361F1A)),
           _divider(),
           _StatItem(value: '$available', label: 'Đang trống', color: Colors.green),
           _divider(),
@@ -142,12 +160,17 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   Widget _buildTableCard(dynamic table) {
     final statusString = table.status.toString().split('.').last;
     final color = _statusColor(statusString);
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
@@ -190,14 +213,14 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
               const Spacer(),
               Text(
                 'Bàn ${table.tableNumber}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C1A0E)),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF361F1A)),
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.people_outline, size: 13, color: Color(0xFF9E7B5A)),
-                  const SizedBox(width: 3),
-                  Text('${table.capacity} chỗ', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                  const Icon(Icons.people_outline, size: 14, color: Color(0xFF504442)),
+                  const SizedBox(width: 4),
+                  Text('${table.capacity} chỗ', style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
                 ],
               ),
               const SizedBox(height: 6),
@@ -213,8 +236,9 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showAddEditDialog(BuildContext context, {dynamic table}) {
     final isEdit = table != null;
@@ -301,9 +325,9 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+      Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
+      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
     ],
   );
 }

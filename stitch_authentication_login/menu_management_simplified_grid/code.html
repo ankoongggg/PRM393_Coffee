@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline-variant": "#d4c3bf",
+              "primary-fixed-dim": "#e5beb5",
+              "tertiary-container": "#003a76",
+              "on-surface-variant": "#504442",
+              "inverse-primary": "#e5beb5",
+              "outline": "#827471",
+              "on-secondary-fixed": "#002204",
+              "error-container": "#ffdad6",
+              "on-secondary": "#ffffff",
+              "tertiary-fixed": "#d6e3ff",
+              "surface-bright": "#fbf9f5",
+              "on-secondary-fixed-variant": "#005312",
+              "on-error": "#ffffff",
+              "surface-variant": "#e4e2de",
+              "surface-dim": "#dbdad6",
+              "surface-tint": "#755750",
+              "on-tertiary-container": "#6ca5ff",
+              "on-primary-fixed-variant": "#5c403a",
+              "on-tertiary": "#ffffff",
+              "surface-container-low": "#f5f3ef",
+              "inverse-on-surface": "#f2f0ed",
+              "inverse-surface": "#30312e",
+              "secondary": "#1b6d24",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary-container": "#217128",
+              "error": "#ba1a1a",
+              "surface-container-high": "#eae8e4",
+              "primary-fixed": "#ffdad2",
+              "primary-container": "#4e342e",
+              "on-primary-fixed": "#2b1611",
+              "on-background": "#1b1c1a",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed": "#001b3d",
+              "on-primary-container": "#c19c94",
+              "surface-container": "#efeeea",
+              "secondary-fixed-dim": "#88d982",
+              "on-tertiary-fixed-variant": "#00468c",
+              "surface-container-highest": "#e4e2de",
+              "on-surface": "#1b1c1a",
+              "tertiary": "#00244f",
+              "tertiary-fixed-dim": "#a9c7ff",
+              "surface": "#fbf9f5",
+              "secondary-container": "#a0f399",
+              "primary": "#361f1a",
+              "on-error-container": "#93000a",
+              "secondary-fixed": "#a3f69c",
+              "background": "#fbf9f5"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body { background-color: #fbf9f5; }
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+</head>
+<body class="font-body text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fbf9f5] flex justify-between items-center px-6 py-4 w-full bg-[#efeeea] transition-colors duration-200">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#4E342E]" data-icon="coffee">coffee</span>
+<h1 class="font-manrope tracking-tight text-2xl font-bold text-[#4E342E]">The Roastery</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#361f1a] font-manrope font-extrabold tracking-widest uppercase text-xs">Manager Profile</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img alt="Manager" data-alt="Portrait of a professional coffee shop manager" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDv7W1gaFY1yzY_hhwGuuKlkSPafLQWIDUXAMzuxIE5De9EHpU7NF3cVo0vFiNQ8bz7BpBfVlYRsB2YeEiL9TDmkax8EcMq_WaWMNPPHcf9RlZSwa6-Wj_JLvGrixme8IOwXv2AKuYN36vgCgcEeenr-XL7lWSdXpyN_hmVxHzliyTnnmbDC25QIWrmSe7Ir87qGr1T3vGYn_2xKTLTw_Q4PSy1Qmln_KL7rYQyIiuibl9Zf5hBYmE0-xaYENQiCxtcks1gaduDNSg"/>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-7xl mx-auto">
+<!-- Editorial Header Section (Modified: title and description removed) -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="max-w-xl">
+<span class="font-label text-xs font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-2 block">Curated Selection</span>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 rounded-xl bg-surface-container text-primary font-label text-sm font-semibold hover:bg-surface-container-highest transition-colors">
+                    Seasonal Filters
+                </button>
+<button class="px-6 py-3 rounded-xl bg-surface-container text-primary font-label text-sm font-semibold hover:bg-surface-container-highest transition-colors">
+                    Export CSV
+                </button>
+</div>
+</div>
+</section>
+<!-- Menu Grid - Responsive 2-column grid layout -->
+<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+<!-- Menu Item 1: Espresso -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Espresso" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Close up of a perfect espresso shot with crema" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAI2yUzl2F46Ywzg81fkeDduigvyZwWBg4HzsYAcaP3MI8Wag4z8If5Qqetarx9kc-bgvq_DCrApyvQJr4AtMV-WZN-PEYLSAoadmJq8EGeVYPiQSYsg4jxX_SOQgu9k7kBJk7Dgr_SyPgJDwmV-a9aSgZW50ls8VtNQfSS4C8lC2hIqNNRjDRxQWLcUq9QgFyLa5sXXVJ-ueqXEsXax-fpEnjvUcrxbPDNBl8jnar8zTR4Wk_gkZYXv739aQlc36DL_Z2mv_uDzLU"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">Double Espresso</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$4.50</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Our signature house blend featuring notes of dark chocolate and toasted almonds.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item 2: Pastry -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Croissant" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Golden flaky butter croissant on a ceramic plate" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5M5dc-qMkH9zEom3fXlTnOC79iEu3GDFPdKS6HojEN45im9BpUtDlOxAklUocoHu0XCo2XlWROFXwRnxHsoRTNhtRd_YUYbIi8A40w286ca6aojbZ6sgnK4Xvy6EyRgVUF00agom4RmoY0QPpuQ6PYoLnitQjLlgLPzOLrFCbHQ0u-XSKh3wekW8ycybTxtane4D7h5WexoAyARWDNmt18nx9a6GzoD_081p6FWtDOykF44e_eNckPR4jl6EUD8QT2eEBMq2_-VE"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">Butter Croissant</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$5.25</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Hand-rolled daily with high-fat French butter for ultimate flakiness.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item 3: Pour Over -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Pour Over" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Manual pour over coffee brewing process" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvrNIN2kSS-d4VJrKbXlkKDvdRYcTS3RLju_clBW_qIpobna6QAoNJQ1OL979znFlkfat05V76k0r1a0UHj7gzw5ywJIYK0sHDnuISy0WcDh8bYMHx-ATfVrmhlnxTLPOH6mgaztNObcuq9aVvF8zgpPyOPtP9kCF3mYIX-pdyQCHoGlMxVUFe0no19NOaTnM5v3zVi4YA4Gs3LCXG8G5WWLU2_qAh-xaYPjKFl0mvI1BVLBpiFJXneMyYj6hTTRUXbcbMFM89y10"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">V60 Pour Over</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$7.00</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Single-origin Ethiopian beans with vibrant acidity and jasmine aroma.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item 4: Toast -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Avocado Toast" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Avocado toast with radish and seeds on sourdough" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaxBNonDsu6WCHqr_sflqA0-tE2S2JAjA361gKdhR_pUep_avGxRzJJBmwVbw8-_4jTcVbItlsU4b9QkeEz3fee79ADvUqQeWsE4_ZkBXnPR3-AitDP96L3U4jzNxRe51mzLQKGaCitjikK6txGZINK7u3GJBVnh0KcJj57oVw0_7Bpton4JRf_tFH7nTqpmDPPKIK62hGnuKcakf6NTNAgauhRezRC5PQFJXAAozN0jkipPwJKD3YNjcWb4XEVaH9pcGT9-l6JZg"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">Artisan Toast</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$12.50</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Sourdough bread topped with smashed avocado, heirloom radish, and chili flakes.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item 5: Cold Brew -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Cold Brew" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Glass of cold brew coffee with ice cubes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS8ksU8LZbAaQH8X6DL-DjtuA7xLM3aiUZwnsdi2v4x9_n9ehGIuKUlRPTw0yu42hLaxDayifRODFUd0J0HDV5nuZvi1ijiamkA78zyJGfauXQPIT1-nvuQsveIMI6DlAGmuMmZDXDGAVqxysoZPuZ6B4jersVHmuvzhUsCqwhZrtCUaVcSPubE5sYUOTFHTkI3FiWok-tp9PWunESipN8XzkSlNUsZIXRi_ka9Myq6yghoTZ1UBTEs6Cvh3JMFKXzJFMeEmtB7-w"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">Nitro Cold Brew</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$6.50</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Infused with nitrogen for a silky, stout-like head and creamy mouthfeel.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item 6: Matcha -->
+<div class="group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_20px_40px_rgba(54,31,26,0.06)] flex flex-col">
+<div class="aspect-square md:aspect-[4/3] overflow-hidden">
+<img alt="Matcha" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Ceremony grade matcha latte with art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKHLQ41bS0myy8XJVRaNRPIPDEd5J-qgc620k7yU7vsIpB9HvKSzfCfUEIjTGBXQxcxo22_noxBGmYkQLdVd7qBFUvTGrp1prnsVSRiHpymNst7ScPkE-89CRuq7n3Qgff4icTHDU42-Bod_kclivIle1TxaG9kWKuohCNKvpSnU73xPOUKjaTvFZ15NLN7Zj4q7fHwDJQgX0xo0RKX3Nvxm72FxqiDkvVCC-Pa8XFp3zwlZYG1j6GY0ZLUp3pVySY6nZrmi8rYD0"/>
+</div>
+<div class="p-3 md:p-6 flex-1 flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2 gap-1">
+<h3 class="font-headline text-base md:text-2xl font-bold text-primary line-clamp-1">Ceremonial Matcha</h3>
+<span class="font-headline text-sm md:text-xl font-bold text-primary-container">$6.00</span>
+</div>
+<p class="text-on-surface-variant text-xs md:text-sm mb-4 md:mb-6 line-clamp-2 hidden sm:block">Stone-ground Uji matcha whisked to order with your choice of milk.</p>
+<div class="flex gap-1 md:gap-2 mt-auto">
+<button class="flex-1 py-2 md:py-3 px-2 md:px-4 rounded-lg md:rounded-xl bg-surface-container-low text-primary font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 md:gap-2">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="edit">edit</span> Edit
+                    </button>
+<button class="p-2 md:p-3 rounded-lg md:rounded-xl bg-surface-container-low text-error font-label text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xs md:text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-28 right-8 z-[60] bg-primary text-on-primary flex items-center gap-3 px-6 py-4 rounded-full shadow-[0_10px_30px_rgba(54,31,26,0.3)] active:scale-95 transition-all group">
+<span class="material-symbols-outlined font-bold" data-icon="add">add</span>
+<span class="font-label text-sm font-bold uppercase tracking-widest">Add New Item</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[1.5rem] bg-[#fbf9f5]/80 backdrop-blur-xl shadow-[0_-10px_30px_rgba(54,31,26,0.04)]">
+<div class="flex justify-around items-center w-full px-2 pb-6 pt-3">
+<!-- Active: Menu -->
+<a class="flex flex-col items-center justify-center bg-[#efeeea] text-[#361f1a] rounded-xl px-4 py-1 transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-tighter">Menu</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#4E342E]/60 px-4 py-1 hover:text-[#361f1a] transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="table_restaurant">table_restaurant</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-tighter">Tables</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#4E342E]/60 px-4 py-1 hover:text-[#361f1a] transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-tighter">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#4E342E]/60 px-4 py-1 hover:text-[#361f1a] transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-tighter">Stats</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#4E342E]/60 px-4 py-1 hover:text-[#361f1a] transition-transform duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-medium uppercase tracking-tighter">Account</span>
+</a>
+</div>
+</nav>
+</body></html>

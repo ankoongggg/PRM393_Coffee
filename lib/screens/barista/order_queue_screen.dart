@@ -15,12 +15,13 @@ class OrderQueueScreen extends StatefulWidget {
 }
 
 class _OrderQueueScreenState extends State<OrderQueueScreen> {
-  // ── THEME ──
-  static const _bgSoft = Color(0xFFFDFBF7);
-  static const _coffeeDark = Color(0xFF3E2723);
-  static const _coffeeMedium = Color(0xFF6F4E37);
-  static const _coffeeLight = Color(0xFFD7CCC8);
-  static const _primary = Color(0xFF0EA5E9); // Blue accent for Barista
+  // ── THEME FROM STITCH ──
+  static const _bgSoft = Color(0xFFFBF9F5);
+  static const _coffeeDark = Color(0xFF361F1A);
+  static const _coffeeMedium = Color(0xFF504442);
+  static const _coffeeLight = Color(0xFFE4E2DE);
+  static const _primary = Color(0xFF003A76);
+  static const _cardShadow = Color.fromRGBO(54, 31, 26, 0.04);
 
   // ── STATE ──
   int _selectedTab = 0;
@@ -317,10 +318,9 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
   Widget _buildHeader(String userName) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: _coffeeLight.withValues(alpha: 0.2))),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)],
+      decoration: const BoxDecoration(
+        color: Color(0xFFFDFBF7),
+        border: Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -453,13 +453,13 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
     final isCancelled = status == OrderStatus.cancelled;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _coffeeLight.withValues(alpha: 0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: _cardShadow, blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,10 +553,10 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: _primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 4,
-            shadowColor: _primary.withValues(alpha: 0.2),
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            shadowColor: Colors.transparent,
           ),
           onPressed: () => _updateBatchStatus(orderId: order.id, batchId: batchId, newStatus: OrderStatus.preparing, message: 'Đã bắt đầu pha chế!', color: _primary),
           child: const Row(
@@ -578,10 +578,10 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: _primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 4,
-            shadowColor: _primary.withValues(alpha: 0.2),
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            shadowColor: Colors.transparent,
           ),
           onPressed: () => _updateBatchStatus(orderId: order.id, batchId: batchId, newStatus: OrderStatus.completed, message: 'Batch đã hoàn thành!', color: Colors.green),
           child: const Row(
@@ -599,8 +599,8 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
     if (status == OrderStatus.cancelled) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.withValues(alpha: 0.15))),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.red.withValues(alpha: 0.15))),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -615,8 +615,8 @@ class _OrderQueueScreenState extends State<OrderQueueScreen> {
     // Completed
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(16)),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -666,6 +666,6 @@ class _NotificationItem {
   final _NotifType type;
   final String message;
   final DateTime time;
-  bool isRead;
-  _NotificationItem({required this.type, required this.message, required this.time, this.isRead = false});
+  bool isRead = false;
+  _NotificationItem({required this.type, required this.message, required this.time});
 }

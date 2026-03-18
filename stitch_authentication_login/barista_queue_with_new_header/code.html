@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barista Dashboard | PRM393 Coffee</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed": "#002204",
+                        "outline": "#827471",
+                        "on-primary-fixed": "#2b1611",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#a3f69c",
+                        "primary-fixed-dim": "#e5beb5",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#001b3d",
+                        "on-primary-fixed-variant": "#5c403a",
+                        "on-secondary-fixed-variant": "#005312",
+                        "surface-container-high": "#eae8e4",
+                        "outline-variant": "#d4c3bf",
+                        "tertiary-fixed": "#d6e3ff",
+                        "surface-bright": "#fbf9f5",
+                        "primary": "#361f1a",
+                        "error": "#ba1a1a",
+                        "secondary": "#1b6d24",
+                        "on-surface": "#1b1c1a",
+                        "tertiary": "#00244f",
+                        "primary-container": "#4e342e",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#30312e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fbf9f5",
+                        "tertiary-fixed-dim": "#a9c7ff",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-secondary-container": "#217128",
+                        "on-primary-container": "#c19c94",
+                        "inverse-primary": "#e5beb5",
+                        "surface-dim": "#dbdad6",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#a0f399",
+                        "surface-container-highest": "#e4e2de",
+                        "on-tertiary-container": "#6ca5ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00468c",
+                        "primary-fixed": "#ffdad2",
+                        "surface-variant": "#e4e2de",
+                        "inverse-on-surface": "#f2f0ed",
+                        "surface-container-low": "#f5f3ef",
+                        "on-surface-variant": "#504442",
+                        "tertiary-container": "#003a76",
+                        "on-background": "#1b1c1a",
+                        "background": "#fbf9f5",
+                        "surface-tint": "#755750",
+                        "surface-container": "#efeeea"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.25rem", // 20px as per requirement
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f5;
+            color: #1b1c1a;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body selection:bg-tertiary-fixed selection:text-tertiary-container">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 bg-[#FDFBF7] border-b border-[#F0EBE6] px-6 py-4">
+<div class="flex justify-between items-center w-full"><div class="flex justify-between items-center w-full">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-[#FFF3E0] flex items-center justify-center border border-[#FFE0B2]">
+<span class="material-symbols-outlined text-[#E65100]" style="font-size: 32px;">restaurant_menu</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-[#E65100] tracking-wider uppercase">Barista</span>
+<span class="text-xl font-bold text-primary tracking-tight">Trần Thị B</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary-container/70">notifications</span>
+</button>
+<button class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary-container/70">logout</span>
+</button>
+</div>
+</div></div>
+</header>
+<main class="pt-28 pb-12 px-6 md:px-12 max-w-7xl mx-auto">
+<!-- Greeting Section -->
+<!-- Order Queue / Kanban View -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Incoming Column -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+                        Đơn mới (2)
+                    </h3>
+<span class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase">New</span>
+</div>
+<div class="space-y-6">
+<!-- Order Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all border border-transparent hover:border-tertiary-fixed-dim shadow-[0_4px_20px_rgba(54,31,26,0.04)]">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline text-2xl font-extrabold text-primary">Bàn #12</h4>
+<p class="text-on-surface-variant text-sm font-medium">10:42 AM • Order #842</p>
+</div>
+<div class="p-2 bg-tertiary-fixed/30 rounded-lg">
+<span class="material-symbols-outlined text-tertiary">priority_high</span>
+</div>
+</div>
+<div class="space-y-4 mb-6">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary-container">local_cafe</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Double Espresso</p>
+<p class="text-sm text-tertiary font-medium bg-tertiary-fixed/40 px-2 py-0.5 rounded-md inline-block mt-1">Extra Hot, No Sugar</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary-container">icecream</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Matcha Latte (Cold)</p>
+<p class="text-sm text-tertiary font-medium bg-tertiary-fixed/40 px-2 py-0.5 rounded-md inline-block mt-1">Less Ice, Soy Milk</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-tertiary-container text-white font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span>Ready to Serve</span>
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+</div>
+<!-- Order Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all border border-transparent hover:border-tertiary-fixed-dim shadow-[0_4px_20px_rgba(54,31,26,0.04)]">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline text-2xl font-extrabold text-primary">Bàn #04</h4>
+<p class="text-on-surface-variant text-sm font-medium">10:45 AM • Order #843</p>
+</div>
+<div class="p-2 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-outline">timer</span>
+</div>
+</div>
+<div class="space-y-4 mb-6">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary-container">coffee_maker</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Phin Sữa Đá</p>
+<p class="text-sm text-tertiary font-medium bg-tertiary-fixed/40 px-2 py-0.5 rounded-md inline-block mt-1">Extra Condensed Milk</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-tertiary-container text-white font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span>Ready to Serve</span>
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+<!-- In Progress Column -->
+<div class="flex flex-col gap-6">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></span>
+                        Đang pha chế (1)
+                    </h3>
+</div>
+<div class="space-y-6">
+<div class="bg-white/40 backdrop-blur-md rounded-xl p-6 border-2 border-dashed border-tertiary-fixed shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline text-2xl font-extrabold text-primary">Bàn #21</h4>
+<p class="text-on-surface-variant text-sm font-medium">10:35 AM • Order #840</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-black uppercase tracking-widest rounded-full">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+                                Brewing
+                            </div>
+</div>
+<div class="space-y-4 mb-6">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-tertiary-fixed-dim/30 rounded-lg flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary">mode_fan</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Cold Brew Signature</p>
+<p class="text-sm text-tertiary font-medium bg-tertiary-fixed/40 px-2 py-0.5 rounded-md inline-block mt-1">Add Vanilla Syrup</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-tertiary-fixed-dim/30 rounded-lg flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary">cookie</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Almond Croissant</p>
+<p class="text-sm text-tertiary font-medium bg-tertiary-fixed/40 px-2 py-0.5 rounded-md inline-block mt-1">Heat up</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-tertiary text-white font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span>Ready to Serve</span>
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Recently Finished (Hidden on mobile maybe, but kept for layout) -->
+<div class="flex flex-col gap-6 opacity-60">
+<div class="flex items-center justify-between px-2">
+<h3 class="font-headline text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+                        Đã hoàn thành (1)
+                    </h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 grayscale">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline text-2xl font-extrabold text-primary">Bàn #08</h4>
+<p class="text-on-surface-variant text-sm font-medium">10:20 AM • Order #839</p>
+</div>
+<span class="material-symbols-outlined text-secondary">verified</span>
+</div>
+<div class="flex items-center gap-3 text-sm font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">inventory_2</span>
+<span>4 Items Completed</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Barista Floating Status (Optional UI refinement for fast-paced view) -->
+</body></html>

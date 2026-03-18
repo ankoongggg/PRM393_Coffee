@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/report_provider.dart';
+import '../../../routes/app_routes.dart';
+import '../manager_navigation_bar.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -10,6 +12,8 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
+  int _selectedNavIndex = 3; // STATS tab
+
   @override
   void initState() {
     super.initState();
@@ -31,14 +35,16 @@ class _ReportScreenState extends State<ReportScreen> {
       builder: (context, reportProvider, child) {
         if (reportProvider.isLoading) {
           return Scaffold(
-            backgroundColor: const Color(0xFFFAF6F1),
+            backgroundColor: const Color(0xFFFBF9F5),
             appBar: AppBar(
-              backgroundColor: const Color(0xFF6F4E37),
+              backgroundColor: const Color(0xFFFBF9F5),
+              elevation: 0,
+              shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: const Text('Báo cáo doanh thu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: const Text('Báo cáo doanh thu', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -49,22 +55,29 @@ class _ReportScreenState extends State<ReportScreen> {
         final topItems = reportProvider.topSellingItems;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFAF6F1),
+          backgroundColor: const Color(0xFFFBF9F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFFFBF9F5),
+            elevation: 0,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text('Báo cáo doanh thu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: const Text('Báo cáo doanh thu', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white70),
+                icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
                 onPressed: () {
                   reportProvider.fetchTodayReport();
                   reportProvider.fetchLast7DaysRevenue();
                   reportProvider.fetchTopSellingItems();
                 },
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+                tooltip: 'Đăng xuất',
+                onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
               ),
             ],
           ),
@@ -87,6 +100,11 @@ class _ReportScreenState extends State<ReportScreen> {
               ],
             ),
           ),
+          bottomNavigationBar: buildManagerBottomNavigation(
+            context: context,
+            selectedIndex: _selectedNavIndex,
+            onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
+          ),
         );
       },
     );
@@ -94,17 +112,13 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildDateLabel(ReportData report) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD4A864).withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.assessment, size: 14, color: Color(0xFF6F4E37)),
-          SizedBox(width: 6),
-          Text('Tổng tất cả đơn hàng', style: TextStyle(fontSize: 12, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          Icon(Icons.assessment, size: 16, color: Color(0xFF361F1A)),
+          SizedBox(width: 8),
+          Text('Tổng quan tất cả đơn hàng', style: TextStyle(fontSize: 13, color: Color(0xFF361F1A), fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -148,18 +162,18 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
   Widget _buildSectionTitle(String title) => Text(title,
-    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C1A0E)));
+    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF361F1A)));
 
   Widget _buildBarChart(Map<String, double> revenueByDay) {
     if (revenueByDay.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
         ),
-        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF9E7B5A)))),
+        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF504442)))),
       );
     }
 
@@ -167,11 +181,11 @@ class _ReportScreenState extends State<ReportScreen> {
     final maxAmount = amounts.reduce((a, b) => a > b ? a : b);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -187,15 +201,15 @@ class _ReportScreenState extends State<ReportScreen> {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('${(amount / 1000).round()}k', style: TextStyle(fontSize: 9, color: isMax ? const Color(0xFF6F4E37) : const Color(0xFF9E7B5A), fontWeight: isMax ? FontWeight.bold : FontWeight.normal)),
-                    const SizedBox(height: 4),
+                    Text('${(amount / 1000).round()}k', style: TextStyle(fontSize: 10, color: isMax ? const Color(0xFF361F1A) : const Color(0xFF504442), fontWeight: isMax ? FontWeight.w800 : FontWeight.w500)),
+                    const SizedBox(height: 6),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 500),
                       width: 28,
                       height: (100 * ratio).toDouble(),
                       decoration: BoxDecoration(
-                        color: isMax ? const Color(0xFF6F4E37) : const Color(0xFFD4A864).withValues(alpha: 0.7),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                        color: isMax ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                       ),
                     ),
                   ],
@@ -206,7 +220,7 @@ class _ReportScreenState extends State<ReportScreen> {
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: revenueByDay.keys.map((day) => Text(day, style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A)))).toList(),
+            children: revenueByDay.keys.map((day) => Text(day, style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w600))).toList(),
           ),
         ],
       ),
@@ -216,13 +230,13 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildTopItemsList(Map<String, int> topItems) {
     if (topItems.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
         ),
-        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF9E7B5A)))),
+        child: const Center(child: Text('Không có dữ liệu', style: TextStyle(color: Color(0xFF504442)))),
       );
     }
 
@@ -231,8 +245,8 @@ class _ReportScreenState extends State<ReportScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         children: List.generate(items.length, (i) {
@@ -258,11 +272,11 @@ class _ReportScreenState extends State<ReportScreen> {
                     )),
                   ),
                 ),
-                title: Text(item.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                subtitle: Text('${item.value} ly bán ra', style: const TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
-                trailing: Text('${_formatPrice(item.value * 35000.0)}đ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6F4E37))),
+                title: Text(item.key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF361F1A))),
+                subtitle: Text('${item.value} ly bán ra', style: const TextStyle(fontSize: 12, color: Color(0xFF504442))),
+                trailing: Text('${_formatPrice(item.value * 35000.0)}đ', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1B6D24))),
               ),
-              if (i < items.length - 1) const Divider(height: 1, indent: 56),
+              if (i < items.length - 1) const Divider(height: 1, indent: 64, color: Color(0xFFF0EBE6)),
             ],
           );
         }),
@@ -283,8 +297,8 @@ class _SummaryCard extends StatelessWidget {
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,10 +308,10 @@ class _SummaryCard extends StatelessWidget {
           decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
           child: Icon(icon, size: 18, color: color),
         ),
-        const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2C1A0E))),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF9E7B5A))),
+        const SizedBox(height: 12),
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
       ],
     ),
   );

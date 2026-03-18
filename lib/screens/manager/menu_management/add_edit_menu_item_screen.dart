@@ -86,21 +86,23 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
+      backgroundColor: const Color(0xFFFBF9F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
+        backgroundColor: const Color(0xFFFBF9F5),
+        elevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           _isEdit ? 'Chỉnh sửa món' : 'Thêm món mới',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
             onPressed: _submit,
-            icon: const Icon(Icons.check, color: Colors.white),
+            icon: const Icon(Icons.check, color: Color(0xFF361F1A)),
           ),
         ],
       ),
@@ -169,9 +171,9 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5EDE0),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF6F4E37), width: 2),
+        color: const Color(0xFFFDFBF7),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE4E2DE), width: 1.5),
       ),
       child: _pickedBytes != null
           ? ClipRRect(
@@ -195,14 +197,15 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF6F4E37))),
-        const SizedBox(height: 10),
+        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
+        const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.transparent),
+            boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
           ),
           child: Column(children: children),
         ),
@@ -226,14 +229,15 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
       validator: required ? (v) => (v == null || v.isEmpty) ? 'Không được để trống' : null : null,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF9C7B5A), size: 20),
+        prefixIcon: Icon(icon, color: const Color(0xFF504442), size: 20),
         suffixText: suffix,
         filled: true,
-        fillColor: const Color(0xFFFAF6F1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        fillColor: const Color(0xFFFDFBF7),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DE))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DE))),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF6F4E37), width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF361F1A), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),
@@ -242,13 +246,18 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
 
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCategory,
+      initialValue: _selectedCategory,
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF9C7B5A), size: 20),
+        prefixIcon: const Icon(Icons.category_outlined, color: Color(0xFF504442), size: 20),
         hintText: 'Chọn danh mục',
         filled: true,
-        fillColor: const Color(0xFFFAF6F1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        fillColor: const Color(0xFFFDFBF7),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DE))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E2DE))),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF361F1A), width: 1.5),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),
       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
@@ -261,25 +270,27 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, color: Color(0xFF6F4E37)),
+          const Icon(Icons.check_circle_outline, color: Color(0xFF361F1A)),
           const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Trạng thái có sẵn', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text('Món sẽ hiển thị khi Waiter tạo order', style: TextStyle(fontSize: 11, color: Color(0xFF9E7B5A))),
+                Text('Trạng thái có sẵn', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
+                Text('Món sẽ hiển thị khi Waiter tạo order', style: TextStyle(fontSize: 11, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
               ],
             ),
           ),
           Switch(
             value: _isAvailable,
-            activeThumbColor: const Color(0xFF6F4E37),
+            activeTrackColor: const Color(0xFF361F1A).withOpacity(0.4),
+            activeThumbColor: const Color(0xFF361F1A),
             onChanged: (v) => setState(() => _isAvailable = v),
           ),
         ],
@@ -298,9 +309,10 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6F4E37),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          backgroundColor: const Color(0xFF361F1A),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );

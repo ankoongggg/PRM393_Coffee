@@ -19,12 +19,13 @@ class CreateOrderScreen extends StatefulWidget {
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   // Theme colors consistent with HTML template
-  static const _bgWarm = Color(0xFFFDF8F6);
-  static const _coffee100 = Color(0xFFF2E8E5);
-  static const _coffee200 = Color(0xFFEADDD7);
-  static const _coffee600 = Color(0xFF8C634F);
-  static const _coffee900 = Color(0xFF4A332D);
-  static const _emerald600 = Color(0xFF059669);
+  static const _bgWarm = Color(0xFFFBF9F5);
+  static const _coffee100 = Color(0xFFF0EBE6);
+  static const _coffee200 = Color(0xFFE4E2DE);
+  static const _coffee600 = Color(0xFF504442);
+  static const _coffee900 = Color(0xFF361F1A);
+  static const _emerald600 = Color(0xFF1B6D24);
+  static const _coffee50 = Color(0xFFFDFBF7);
 
   String _selectedCategory = 'Tất cả';
   final Map<String, int> _cart = {}; // itemId → quantity
@@ -139,8 +140,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('CHỌN MÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
-                  Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+                  const Text('CHỌN MÓN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF361F1A), letterSpacing: 0.5)),
+                  Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
                 ],
               ),
             ],
@@ -171,9 +172,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   Positioned(
                     right: -4, top: -4,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: _coffee600, shape: BoxShape.circle),
-                      child: Text('$_totalItems', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(color: Color(0xFF361F1A), shape: BoxShape.circle),
+                      child: Text('$_totalItems', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                     ),
                   ),
               ],
@@ -190,7 +191,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       height: 60,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: _coffee100)),
+        border: Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
       ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
@@ -206,14 +207,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? _coffee600 : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: selected ? _coffee600 : _coffee200),
+                color: selected ? const Color(0xFF361F1A) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: selected ? const Color(0xFF361F1A) : const Color(0xFFF0EBE6)),
               ),
               child: Center(
                 child: Text(
                   cat,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? Colors.white : _coffee600),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: selected ? Colors.white : const Color(0xFF504442)),
                 ),
               ),
             ),
@@ -260,8 +261,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _coffee100),
+          border: Border.all(color: const Color(0xFFF0EBE6)),
+          boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -282,12 +285,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           )
                         : _buildPlaceholderImage(),
                   ),
-                  Positioned(
+                    Positioned(
                     top: 8, right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                      child: Text(item.category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _coffee600)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(8)),
+                      child: const Text('COFFEE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF361F1A), letterSpacing: 0.5)),
                     ),
                   ),
                 ],
@@ -307,14 +310,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       children: [
                         Text(
                           item.name,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _coffee900),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF361F1A)),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           '${formatPrice(item.price)}đ',
-                          style: const TextStyle(fontSize: 12, color: _emerald600, fontWeight: FontWeight.w700),
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF1B6D24), fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
@@ -343,13 +346,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         height: 32,
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: _coffee50, // bg nhạt
-            foregroundColor: _coffee600,
+            backgroundColor: const Color(0xFFFBF9F5),
+            foregroundColor: const Color(0xFF361F1A),
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFFF0EBE6))),
           ),
-          icon: const Icon(Icons.add_rounded, size: 16),
-          label: const Text('Thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: const Text('Thêm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
           onPressed: onIncrement,
         ),
       );
@@ -358,22 +361,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Container(
       height: 32,
       decoration: BoxDecoration(
-        color: _coffee50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _coffee200),
+        color: const Color(0xFFFBF9F5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF0EBE6)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           IconButton(
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.remove_rounded, size: 16, color: _coffee600),
+            icon: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFF361F1A)),
             onPressed: onDecrement,
           ),
-          Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _coffee900)),
+          Text('$qty', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF361F1A))),
           IconButton(
             padding: EdgeInsets.zero,
-            icon: const Icon(Icons.add_rounded, size: 16, color: _coffee600),
+            icon: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF361F1A)),
             onPressed: onIncrement,
           ),
         ],
@@ -381,7 +384,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
-  static const _coffee50 = Color(0xFFFDF8F6);
+
 
   // ── BOTTOM CART BAR ──
   Widget _buildCartBar() {
@@ -389,21 +392,21 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: const [
+          BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.08), blurRadius: 24, offset: Offset(0, -8)),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(color: _coffee100, borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: const Color(0xFFFBF9F5), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF0EBE6))),
             child: Row(
               children: [
-                const Icon(Icons.shopping_bag_rounded, size: 16, color: _coffee600),
-                const SizedBox(width: 6),
-                Text('$_totalItems món', style: const TextStyle(color: _coffee600, fontWeight: FontWeight.bold, fontSize: 13)),
+                const Icon(Icons.shopping_bag_rounded, size: 18, color: Color(0xFF361F1A)),
+                const SizedBox(width: 8),
+                Text('$_totalItems món', style: const TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800, fontSize: 14)),
               ],
             ),
           ),
@@ -413,16 +416,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tạm tính', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _coffee900)),
+                const Text('Tạm tính', style: TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
+                Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
               ],
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _coffee600,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: const Color(0xFF361F1A),
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 4,
+              shadowColor: const Color(0xFF361F1A).withOpacity(0.3),
             ),
             onPressed: () {
                Navigator.pushNamed(
@@ -435,7 +440,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   },
                 );
             },
-            child: const Text('Tiếp tục', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Tiếp tục', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
           ),
         ],
       ),

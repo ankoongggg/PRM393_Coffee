@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../routes/app_routes.dart';
 import '../../../providers/menu_provider.dart';
 import '../../../models/menu_item_model.dart';
+import '../manager_navigation_bar.dart';
 
 class MenuListScreen extends StatefulWidget {
   const MenuListScreen({super.key});
@@ -13,15 +14,16 @@ class MenuListScreen extends StatefulWidget {
 
 class _MenuListScreenState extends State<MenuListScreen> {
   // Theme colors consistent with HTML template
-  static const _bgWarm = Color(0xFFFDF8F6);
-  static const _coffee50 = Color(0xFFFDF8F6);
-  static const _coffee100 = Color(0xFFF2E8E5);
-  static const _coffee200 = Color(0xFFEADDD7);
-  static const _coffee600 = Color(0xFF8C634F);
-  static const _coffee900 = Color(0xFF4A332D);
-  static const _emerald600 = Color(0xFF059669);
+  static const _bgWarm = Color(0xFFFBF9F5);
+  static const _coffee50 = Color(0xFFFDFBF7);
+  static const _coffee100 = Color(0xFFF0EBE6);
+  static const _coffee200 = Color(0xFFE4E2DE);
+  static const _coffee600 = Color(0xFF4E342E);
+  static const _coffee900 = Color(0xFF361F1A);
+  static const _emerald600 = Color(0xFF1B6D24);
 
   String _selectedCategory = 'Tất cả';
+  int _selectedNavIndex = 0; // MENU tab
 
   @override
   void initState() {
@@ -73,6 +75,11 @@ class _MenuListScreenState extends State<MenuListScreen> {
               ],
             ),
           ),
+          bottomNavigationBar: buildManagerBottomNavigation(
+            context: context,
+            selectedIndex: _selectedNavIndex,
+            onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
+          ),
         );
       },
     );
@@ -83,8 +90,8 @@ class _MenuListScreenState extends State<MenuListScreen> {
   Widget _buildHeader(MenuProvider menuProvider) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      decoration: const BoxDecoration(
+        color: _coffee50,
         border: Border(bottom: BorderSide(color: _coffee100)),
       ),
       child: Row(
@@ -114,8 +121,9 @@ class _MenuListScreenState extends State<MenuListScreen> {
             ],
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: _coffee600),
-            onPressed: () => menuProvider.fetchMenuItems(),
+            icon: const Icon(Icons.logout_rounded, color: _coffee600),
+            tooltip: 'Đăng xuất',
+            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
           ),
         ],
       ),
@@ -141,9 +149,9 @@ class _MenuListScreenState extends State<MenuListScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: selected ? _coffee600 : _coffee50,
+                color: selected ? _coffee900 : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: selected ? _coffee600 : _coffee200),
+                border: Border.all(color: selected ? Colors.transparent : _coffee200),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -165,12 +173,13 @@ class _MenuListScreenState extends State<MenuListScreen> {
     final total = items.length;
     final available = items.where((item) => item.isAvailable).length;
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: _coffee50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _coffee100),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -209,12 +218,12 @@ class _MenuListScreenState extends State<MenuListScreen> {
 
   Widget _buildMenuCard(MenuItemModel item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _coffee100),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),

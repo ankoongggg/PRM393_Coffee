@@ -11,12 +11,11 @@ class OrderTrackingScreen extends StatefulWidget {
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   // Theme colors consistent with HTML template
-  static const _bgWarm = Color(0xFFFDF8F6);
-  static const _coffee50 = Color(0xFFFDF8F6);
-  static const _coffee100 = Color(0xFFF2E8E5);
-  static const _coffee200 = Color(0xFFEADDD7);
-  static const _coffee600 = Color(0xFF8C634F);
-  static const _coffee900 = Color(0xFF4A332D);
+  static const _bgWarm = Color(0xFFFBF9F5);
+  static const _coffee100 = Color(0xFFF0EBE6);
+  static const _coffee200 = Color(0xFFE4E2DE);
+  static const _coffee600 = Color(0xFF504442);
+  static const _coffee900 = Color(0xFF361F1A);
 
   // TODO: replace with OrderProvider.getOrderById
   late Map<String, dynamic> _order;
@@ -43,19 +42,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   int get _currentStep => _steps.indexOf(_order['status']);
 
   Color _statusColor(String s) => switch (s) {
-    'pending' => const Color(0xFFD97706), // Orange
-    'preparing' => const Color(0xFF2563EB), // Blue
-    'completed' => const Color(0xFF059669), // Emerald
-    'served' => _coffee600,
-    _ => Colors.grey,
+    'pending' => const Color(0xFF361F1A), // Dark
+    'preparing' => const Color(0xFF361F1A), // Dark
+    'completed' => const Color(0xFF1B6D24), // Green
+    'served' => const Color(0xFF504442),
+    _ => const Color(0xFFE4E2DE),
   };
 
   Color _statusBgColor(String s) => switch (s) {
-    'pending' => const Color(0xFFFEF3C7),
-    'preparing' => const Color(0xFFDBEAFE),
-    'completed' => const Color(0xFFD1FAE5),
-    'served' => const Color(0xFFFDF8F6),
-    _ => Colors.grey[100]!,
+    'pending' => const Color(0xFF361F1A).withOpacity(0.05),
+    'preparing' => const Color(0xFF361F1A).withOpacity(0.05),
+    'completed' => const Color(0xFF1B6D24).withOpacity(0.08),
+    'served' => const Color(0xFFFBF9F5),
+    _ => const Color(0xFFFBF9F5),
   };
 
   String _statusLabel(String s) => switch (s) {
@@ -95,13 +94,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         height: 54,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _coffee600,
+                            backgroundColor: const Color(0xFF361F1A),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                             elevation: 4,
+                            shadowColor: const Color(0xFF361F1A).withOpacity(0.3),
                           ),
                           icon: const Icon(Icons.room_service_rounded),
-                          label: const Text('XÁC NHẬN ĐÃ PHỤC VỤ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1)),
+                          label: const Text('XÁC NHẬN ĐÃ PHỤC VỤ', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 1.5)),
                           onPressed: () {
                             setState(() => _order['status'] = 'served');
                             // TODO: OrderProvider.updateStatus(orderId, OrderStatus.served)
@@ -112,16 +112,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.green[50],
+                          color: const Color(0xFF1B6D24).withOpacity(0.05),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.green[200]!),
+                          border: Border.all(color: const Color(0xFF1B6D24).withOpacity(0.2)),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_circle_rounded, color: Color(0xFF059669)),
+                            Icon(Icons.check_circle_rounded, color: Color(0xFF1B6D24)),
                             SizedBox(width: 12),
-                            Text('Đơn đã phục vụ xong!', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('Đơn đã phục vụ xong!', style: TextStyle(color: Color(0xFF1B6D24), fontWeight: FontWeight.w800, fontSize: 16)),
                           ],
                         ),
                       ),
@@ -141,7 +141,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: _coffee100)),
+        border: Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
       ),
       child: Row(
         children: [
@@ -153,8 +153,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('THEO DÕI ĐƠN HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
-              Text('Mã #${_order['id']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+              const Text('THEO DÕI ĐƠN HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF504442), letterSpacing: 0.5)),
+              Text('Mã #${_order['id']}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
             ],
           ),
         ],
@@ -182,9 +182,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Text(_statusLabel(status), style: TextStyle(color: _statusColor(status), fontSize: 18, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(12)),
-            child: Text('Bàn ${_order['table']} • Lúc ${_order['time']}', style: TextStyle(color: _statusColor(status).withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(12)),
+            child: Text('Bàn ${_order['table']} • Lúc ${_order['time']}', style: TextStyle(color: _statusColor(status), fontSize: 14, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -197,13 +197,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _coffee100),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: const Color(0xFFF0EBE6)),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Tiến trình', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _coffee900)),
+          const Text('Tiến trình', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF361F1A))),
           const SizedBox(height: 20),
           Column(
             children: List.generate(_steps.length, (i) {
@@ -221,13 +221,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: done ? _coffee600 : const Color(0xFFF5EDE0),
-                          border: isCurrent ? Border.all(color: _coffee200, width: 4) : null,
+                          color: done ? const Color(0xFF361F1A) : const Color(0xFFFBF9F5),
+                          border: Border.all(color: done ? const Color(0xFF361F1A) : const Color(0xFFF0EBE6), width: isCurrent ? 4 : 1),
                         ),
-                        child: Icon(_stepIcons[i], size: 16, color: done ? Colors.white : _coffee200),
+                        child: Icon(_stepIcons[i], size: 16, color: done ? Colors.white : const Color(0xFFE4E2DE)),
                       ),
                       if (i < _steps.length - 1)
-                        Container(width: 2, height: 32, color: done ? _coffee600 : _coffee100),
+                        Container(width: 2, height: 32, color: done ? const Color(0xFF361F1A) : const Color(0xFFF0EBE6)),
                     ],
                   ),
                   const SizedBox(width: 16),
@@ -237,8 +237,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       _stepLabels[i],
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
-                        color: done ? _coffee900 : Colors.grey,
+                        fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                        color: done ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
                       ),
                     ),
                   ),
@@ -258,16 +258,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _coffee100),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: const Color(0xFFF0EBE6)),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Món đã gọi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _coffee900)),
+          const Text('Món đã gọi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF361F1A))),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1, color: _coffee100),
+            child: Divider(height: 1, color: Color(0xFFF0EBE6)),
           ),
           ...items.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -275,12 +275,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: _coffee50, borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.local_cafe_rounded, size: 20, color: _coffee600),
+                  decoration: BoxDecoration(color: const Color(0xFFFBF9F5), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFF0EBE6))),
+                  child: const Icon(Icons.local_cafe_rounded, size: 20, color: Color(0xFF361F1A)),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _coffee900))),
-                Text('x${item['qty']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee600)),
+                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF361F1A)))),
+                Text('x${item['qty']}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
               ],
             ),
           )),

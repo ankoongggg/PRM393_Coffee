@@ -8,7 +8,6 @@ import '../../../providers/table_provider.dart';
 import '../../../providers/auth_provider.dart';
 
 // Import các Models
-import '../../../models/menu_item_model.dart';
 import '../../../models/order_item_model.dart';
 import '../../../models/order_model.dart';
 import '../../../core/enums/order_status.dart';
@@ -31,13 +30,12 @@ class CartDetailScreen extends StatefulWidget {
 
 class _CartDetailScreenState extends State<CartDetailScreen> {
   // Theme colors based on the HTML template
-  static const _bgWarm = Color(0xFFFDF8F6);
-  static const _coffee50 = Color(0xFFFDF8F6);
-  static const _coffee100 = Color(0xFFF2E8E5);
-  static const _coffee200 = Color(0xFFEADDD7);
-  static const _coffee600 = Color(0xFF8C634F);
-  static const _coffee900 = Color(0xFF4A332D);
-  static const _emerald600 = Color(0xFF059669);
+  static const _bgWarm = Color(0xFFFBF9F5);
+  static const _coffee100 = Color(0xFFF0EBE6);
+  static const _coffee200 = Color(0xFFE4E2DE);
+  static const _coffee600 = Color(0xFF504442);
+  static const _coffee900 = Color(0xFF361F1A);
+  static const _emerald600 = Color(0xFF1B6D24);
 
   late Map<String, int> _cart;
 
@@ -81,29 +79,29 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFBF9F5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Xác nhận gửi order?', style: TextStyle(color: _coffee900, fontWeight: FontWeight.bold)),
+        title: const Text('Xác nhận gửi order?', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
         content: Text(
           'Bàn ${widget.tableNumber}: $_totalItems món\nTổng: ${_formatPrice(_totalPrice)}đ',
-          style: const TextStyle(color: _coffee600, fontSize: 16),
+          style: const TextStyle(color: Color(0xFF504442), fontSize: 16, fontWeight: FontWeight.w500),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Hủy', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+            child: const Text('Hủy', style: TextStyle(color: Color(0xFF504442), fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _coffee600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: const Color(0xFF361F1A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             onPressed: () async {
               Navigator.pop(dialogContext);
               _processOrderSubmission();
             },
-            child: const Text('Xác nhận', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Xác nhận', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -180,7 +178,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Đã gửi đơn hàng thành công!'),
-            backgroundColor: _coffee600,
+            backgroundColor: Color(0xFF361F1A),
             behavior: SnackBarBehavior.floating
           ),
         );
@@ -212,9 +210,9 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.shopping_cart_outlined, size: 64, color: _coffee200),
+                          Icon(Icons.shopping_cart_outlined, size: 64, color: Color(0xFFE4E2DE)),
                           const SizedBox(height: 16),
-                          const Text('Giỏ hàng trống', style: TextStyle(color: _coffee600, fontSize: 16)),
+                          const Text('Giỏ hàng trống', style: TextStyle(color: Color(0xFF361F1A), fontSize: 16, fontWeight: FontWeight.w700)),
                         ],
                       ),
                     )
@@ -232,7 +230,8 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: _coffee100),
+                            border: Border.all(color: const Color(0xFFF0EBE6)),
+                            boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
                           ),
                           child: Row(
                             children: [
@@ -256,16 +255,16 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                    const SizedBox(height: 4),
-                                    Text('${_formatPrice(item.price)}đ', style: const TextStyle(fontSize: 13, color: _emerald600, fontWeight: FontWeight.w700)),
+                                    Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF361F1A)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                    const SizedBox(height: 6),
+                                    Text('${_formatPrice(item.price)}đ', style: const TextStyle(fontSize: 13, color: Color(0xFF1B6D24), fontWeight: FontWeight.w800)),
                                   ],
                                 ),
                               ),
                               // Nút điều chỉnh số lượng hình dọc
                               Container(
                                 decoration: BoxDecoration(
-                                  color: _coffee50,
+                                  color: const Color(0xFFFBF9F5),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: _coffee200),
                                 ),
@@ -273,18 +272,18 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove, size: 16),
-                                      color: _coffee600,
+                                      icon: const Icon(Icons.remove_rounded, size: 18),
+                                      color: const Color(0xFF361F1A),
                                       padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 44),
                                       onPressed: () => _decrement(itemId),
                                     ),
-                                    Text('$quantity', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _coffee900)),
+                                    Text('$quantity', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF361F1A))),
                                     IconButton(
-                                      icon: const Icon(Icons.add, size: 16),
-                                      color: _coffee600,
+                                      icon: const Icon(Icons.add_rounded, size: 18),
+                                      color: const Color(0xFF361F1A),
                                       padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
+                                      constraints: const BoxConstraints(minWidth: 32, minHeight: 44),
                                       onPressed: () => _increment(itemId),
                                     ),
                                   ],
@@ -309,7 +308,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: _coffee100)),
+        border: Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -324,8 +323,8 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('GIỎ HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _coffee600, letterSpacing: 0.5)),
-                  Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _coffee900)),
+                  const Text('GIỎ HÀNG', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF504442), letterSpacing: 0.5)),
+                  Text('Bàn ${widget.tableNumber.toString().padLeft(2,'0')}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
                 ],
               ),
             ],
@@ -342,7 +341,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))],
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.08), blurRadius: 24, offset: Offset(0, -8))],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -351,8 +350,8 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Tổng cộng', style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w600)),
-              Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _coffee900)),
+              const Text('Tổng cộng', style: TextStyle(fontSize: 15, color: Color(0xFF504442), fontWeight: FontWeight.w700)),
+              Text('${_formatPrice(_totalPrice)}đ', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
             ],
           ),
           const SizedBox(height: 20),
@@ -362,12 +361,13 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
             height: 54,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _coffee600,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
+                backgroundColor: const Color(0xFF361F1A),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                elevation: 4,
+                shadowColor: const Color(0xFF361F1A).withOpacity(0.3),
               ),
               onPressed: _submitOrder,
-              child: const Text('GỬI ORDER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1)),
+              child: const Text('GỬI ORDER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 1.5)),
             ),
           ),
         ],

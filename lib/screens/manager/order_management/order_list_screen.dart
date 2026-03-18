@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/order_provider.dart';
+import '../../../routes/app_routes.dart';
 import '../../../widgets/date_range_filter_field.dart';
+import '../manager_navigation_bar.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -12,6 +14,7 @@ class OrderListScreen extends StatefulWidget {
 
 class _OrderListScreenState extends State<OrderListScreen> {
   String _selectedFilter = 'all';
+  int _selectedNavIndex = 2; // ORDERS tab
   final _filters = ['all', 'pending', 'preparing', 'completed', 'cancelled'];
   final _filterLabels = {
     'all': 'Tất cả', 'pending': 'Chờ pha', 'preparing': 'Đang pha',
@@ -110,19 +113,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
         final filteredOrders = _getFilteredOrders(orderProvider);
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFAF6F1),
+          backgroundColor: const Color(0xFFFBF9F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFFFBF9F5),
+            elevation: 0,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
                 // Nút refresh này sẽ kích hoạt lại listener nếu cần
                 onPressed: () => orderProvider.startOrderListener(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+                tooltip: 'Đăng xuất',
+                onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
               ),
             ],
           ),
@@ -130,12 +140,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
             children: [
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.transparent),
+                  boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
                 ),
                 child: DateRangeFilterField(
                   fromDate: _fromDate,
@@ -157,6 +168,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 Text(orderProvider.error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
               Expanded(child: _buildOrderList(filteredOrders)),
             ],
+          ),
+          bottomNavigationBar: buildManagerBottomNavigation(
+            context: context,
+            selectedIndex: _selectedNavIndex,
+            onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
           ),
         );
       },
@@ -180,18 +196,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
             onTap: () => setState(() => _selectedFilter = f),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF6F4E37) : Colors.white,
+                color: selected ? const Color(0xFF361F1A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF6F4E37)),
+                border: Border.all(color: selected ? Colors.transparent : const Color(0xFFE4E2DE)),
               ),
               child: Text(
                 _filterLabels[f]!,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : const Color(0xFF6F4E37),
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : const Color(0xFF504442),
                 ),
               ),
             ),
@@ -204,20 +220,21 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Widget _buildSummaryRow(List<dynamic> orders) {
     final total = orders.fold<double>(0, (s, o) => s + o.totalAmount);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         children: [
-          const Icon(Icons.receipt_long, size: 16, color: Color(0xFF9E7B5A)),
-          const SizedBox(width: 6),
-          Text('${orders.length} đơn', style: const TextStyle(fontSize: 13, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          const Icon(Icons.receipt_long, size: 18, color: Color(0xFF361F1A)),
+          const SizedBox(width: 8),
+          Text('${orders.length} đơn', style: const TextStyle(fontSize: 14, color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
           const Spacer(),
-          Text('Tổng: ${_formatPrice(total)}đ', style: const TextStyle(fontSize: 13, color: Color(0xFF6F4E37), fontWeight: FontWeight.w600)),
+          Text('Tổng: ${_formatPrice(total)}đ', style: const TextStyle(fontSize: 14, color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -247,26 +264,31 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Widget _buildOrderCard(dynamic order) {
     final statusString = order.status.toString().split('.').last;
     final statusColor = _statusColor(statusString);
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 1.5,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.pushNamed(context, '/manager/orders/detail', arguments: order.id),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => Navigator.pushNamed(context, '/manager/orders/detail', arguments: order.id),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(Icons.receipt, color: statusColor),
                 ),
-                child: Icon(Icons.receipt, color: statusColor),
-              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -275,40 +297,40 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     Row(
                       children: [
                         // Rút gọn ID cho dễ nhìn nếu quá dài
-                        Text(order.id.toString().substring(0, 6).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
+                        Text(order.id.toString().substring(0, 6).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF361F1A))),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(_statusLabel(statusString), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w700)),
+                          child: Text(_statusLabel(statusString), style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.w800)),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.table_bar, size: 14, color: Color(0xFF504442)),
+                        const SizedBox(width: 4),
+                        Text('Bàn ${order.tableNumber}', style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.person_outline, size: 14, color: Color(0xFF504442)),
+                        const SizedBox(width: 4),
+                        Text(order.waiterName, style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.table_bar, size: 12, color: Color(0xFF9E7B5A)),
-                        const SizedBox(width: 3),
-                        Text('Bàn ${order.tableNumber}', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.person_outline, size: 12, color: Color(0xFF9E7B5A)),
-                        const SizedBox(width: 3),
-                        Text(order.waiterName, style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.local_cafe_outlined, size: 12, color: Color(0xFF9E7B5A)),
-                        const SizedBox(width: 3),
-                        Text('${order.items.length} món', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.access_time, size: 12, color: Color(0xFF9E7B5A)),
-                        const SizedBox(width: 3),
-                        Text('${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        const Icon(Icons.local_cafe_outlined, size: 14, color: Color(0xFF504442)),
+                        const SizedBox(width: 4),
+                        Text('${order.items.length} món', style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.access_time, size: 14, color: Color(0xFF504442)),
+                        const SizedBox(width: 4),
+                        Text('${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ],
@@ -317,15 +339,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('${_formatPrice(order.totalAmount)}đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF6F4E37))),
+                  Text('${_formatPrice(order.totalAmount)}đ', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF361F1A))),
                   const SizedBox(height: 8),
-                  const Icon(Icons.chevron_right, color: Color(0xFFD4A864)),
+                  const Icon(Icons.chevron_right, color: Color(0xFF361F1A)),
                 ],
               ),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

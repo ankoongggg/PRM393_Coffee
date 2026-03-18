@@ -19,12 +19,12 @@ class TableListScreen extends StatefulWidget {
 
 class _TableListScreenState extends State<TableListScreen> {
   // Theme colors
-  static const _bgWarm = Color(0xFFFDF8F6);
-  static const _coffee100 = Color(0xFFF2E8E5);
-  static const _coffee200 = Color(0xFFEADDD7);
-  static const _coffee600 = Color(0xFF8C634F);
-  static const _coffee900 = Color(0xFF4A332D);
-  static const _waiterAccent = Color(0xFFE67E22);
+  static const _bgWarm = Color(0xFFFBF9F5);
+  static const _coffee100 = Color(0xFFF0EBE6);
+  static const _coffee200 = Color(0xFFE4E2DE);
+  static const _coffee600 = Color(0xFF504442);
+  static const _coffee900 = Color(0xFF361F1A);
+  static const _waiterAccent = Color(0xFF361F1A);
 
   // Status colors
   static const _emptyColor = Color(0xFF10B981);
@@ -130,19 +130,19 @@ class _TableListScreenState extends State<TableListScreen> {
               constraints: const BoxConstraints(maxHeight: 400),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8))],
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.08), blurRadius: 24, offset: Offset(0, 8))],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: const BoxDecoration(color: _waiterAccent, borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: const BoxDecoration(color: Color(0xFF361F1A), borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('🔔 Thông báo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const Text('🔔 Thông báo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
                         Text('${_notifications.length} mục', style: const TextStyle(fontSize: 12, color: Colors.white70)),
                       ],
                     ),
@@ -319,8 +319,8 @@ class _TableListScreenState extends State<TableListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(bottom: BorderSide(color: _coffee100)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)],
+        border: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.02), blurRadius: 4)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -331,18 +331,18 @@ class _TableListScreenState extends State<TableListScreen> {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: _waiterAccent.withValues(alpha: 0.1),
+                  color: const Color(0xFF361F1A).withValues(alpha: 0.05),
                   shape: BoxShape.circle,
-                  border: Border.all(color: _waiterAccent.withValues(alpha: 0.2), width: 2),
+                  border: Border.all(color: const Color(0xFF361F1A).withValues(alpha: 0.1), width: 2),
                 ),
-                child: const Icon(Icons.restaurant_menu_rounded, color: _waiterAccent, size: 20),
+                child: const Icon(Icons.restaurant_menu_rounded, color: Color(0xFF361F1A), size: 20),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('WAITER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _waiterAccent, letterSpacing: 0.5)),
-                  Text(userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _coffee900)),
+                  const Text('WAITER', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF361F1A), letterSpacing: 0.5)),
+                  Text(userName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
                 ],
               ),
             ],
@@ -400,13 +400,13 @@ class _TableListScreenState extends State<TableListScreen> {
   // ── STATUS SUMMARY FILTER ──
   Widget _buildStatusSummary(int available, int waiting, int serving) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _coffee100),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        border: Border.all(color: const Color(0xFFF0EBE6)),
+        boxShadow: const [
+          BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -426,14 +426,14 @@ class _TableListScreenState extends State<TableListScreen> {
     return Expanded(
       child: Column(
         children: [
-          Text(count.toString().padLeft(2, '0'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 4),
+          Text(count.toString().padLeft(2, '0'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
               const SizedBox(width: 6),
-              Text(label.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(label.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF504442))),
             ],
           ),
         ],
@@ -499,8 +499,10 @@ class _TableListScreenState extends State<TableListScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _coffee100),
+            border: Border.all(color: const Color(0xFFF0EBE6)),
+            boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -510,13 +512,13 @@ class _TableListScreenState extends State<TableListScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: labelBg, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: labelBg, borderRadius: BorderRadius.circular(10)),
                     child: Text(
                       statusLabel.toUpperCase(),
-                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: labelText, letterSpacing: 0.5),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: labelText, letterSpacing: 0.5),
                     ),
                   ),
-                  Text('${tableModel.capacity} chỗ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[400])),
+                  Text('${tableModel.capacity} chỗ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFE4E2DE))),
                 ],
               ),
               const Spacer(),
@@ -528,12 +530,12 @@ class _TableListScreenState extends State<TableListScreen> {
               const SizedBox(height: 12),
               Text(
                 'Bàn ${tableModel.tableNumber.toString().padLeft(2, '0')}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _coffee900),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF361F1A)),
               ),
               const SizedBox(height: 4),
               Text(
                 subText,
-                style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey[400]),
+                style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Color(0xFFE4E2DE), fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -554,6 +556,6 @@ class _WaiterNotification {
   final _WNotifType type;
   final String message;
   final DateTime time;
-  bool isRead;
-  _WaiterNotification({required this.type, required this.message, required this.time, this.isRead = false});
+  bool isRead = false;
+  _WaiterNotification({required this.type, required this.message, required this.time});
 }

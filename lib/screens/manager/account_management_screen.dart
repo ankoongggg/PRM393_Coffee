@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../routes/app_routes.dart';
+import 'manager_navigation_bar.dart';
 
 class AccountManagementScreen extends StatefulWidget {
   const AccountManagementScreen({super.key});
@@ -9,9 +11,11 @@ class AccountManagementScreen extends StatefulWidget {
 
 class _AccountManagementScreenState extends State<AccountManagementScreen> {
   String _selectedRole = 'Tất cả';
+  int _selectedNavIndex = 4; // ACCOUNT tab
   final _roles = ['Tất cả', 'Waiter', 'Barista'];
 
-  // TODO: thay bằng dữ liệu từ API / AuthProvider
+  // ✅ Mock dữ liệu nhân viên (TODO: tích hợp với Firebase sau)
+  // Hiện AuthProvider chưa có method lấy list users, nên giữ mock trước
   final List<Map<String, dynamic>> _accounts = [
     {'id': 'USR001', 'name': 'Nguyễn An',   'email': 'an@coffee.vn',   'role': 'Waiter',   'active': true},
     {'id': 'USR002', 'name': 'Trần Bình',   'email': 'binh@coffee.vn', 'role': 'Waiter',   'active': true},
@@ -25,9 +29,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
       : _accounts.where((a) => a['role'] == _selectedRole).toList();
 
   Color _roleColor(String role) => switch (role) {
-        'Waiter'  => const Color(0xFF2E7D32),
-        'Barista' => const Color(0xFF1565C0),
-        _         => const Color(0xFF6F4E37),
+        'Waiter'  => const Color(0xFF1B6D24),
+        'Barista' => const Color(0xFF003A76),
+        _         => const Color(0xFF361F1A),
       };
 
   IconData _roleIcon(String role) => switch (role) {
@@ -43,20 +47,30 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
     final baristaCount = _accounts.where((a) => a['role'] == 'Barista').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
+      backgroundColor: const Color(0xFFFBF9F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
+        backgroundColor: const Color(0xFFFBF9F5),
+        elevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Quản lý Tài khoản',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+            tooltip: 'Đăng xuất',
+            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF6F4E37),
+        backgroundColor: const Color(0xFF361F1A),
+        elevation: 4,
         icon: const Icon(Icons.person_add, color: Colors.white),
-        label: const Text('Thêm tài khoản', style: TextStyle(color: Colors.white)),
+        label: const Text('Thêm tài khoản', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => _showAddEditDialog(context),
       ),
       body: Column(
@@ -66,6 +80,11 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
           Expanded(child: _buildList()),
         ],
       ),
+      bottomNavigationBar: buildManagerBottomNavigation(
+        context: context,
+        selectedIndex: _selectedNavIndex,
+        onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
+      ),
     );
   }
 
@@ -74,29 +93,30 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
   Widget _buildSummaryBar(int active, int waiter, int barista) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _StatItem('${_accounts.length}', 'Tổng', const Color(0xFF6F4E37)),
+          _StatItem('${_accounts.length}', 'Tổng', const Color(0xFF361F1A)),
           _vDivider(),
-          _StatItem('$active', 'Đang hoạt động', const Color(0xFF27AE60)),
+          _StatItem('$active', 'Đang hoạt động', const Color(0xFF1B6D24)),
           _vDivider(),
-          _StatItem('$waiter', 'Waiter', const Color(0xFF2E7D32)),
+          _StatItem('$waiter', 'Waiter', const Color(0xFF1B6D24)),
           _vDivider(),
-          _StatItem('$barista', 'Barista', const Color(0xFF1565C0)),
+          _StatItem('$barista', 'Barista', const Color(0xFF003A76)),
         ],
       ),
     );
   }
 
   Widget _vDivider() =>
-      Container(width: 1, height: 32, color: const Color(0xFFE8D5C0));
+      Container(width: 1, height: 32, color: const Color(0xFFE4E2DE));
 
   // ── Role filter ───────────────────────────────────────────────
 
@@ -115,18 +135,18 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
             onTap: () => setState(() => _selectedRole = role),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF6F4E37) : Colors.white,
+                color: selected ? const Color(0xFF361F1A) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF6F4E37)),
+                border: Border.all(color: selected ? Colors.transparent : const Color(0xFFE4E2DE)),
               ),
               child: Text(
                 role,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : const Color(0xFF6F4E37),
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : const Color(0xFF504442),
                 ),
               ),
             ),
@@ -160,12 +180,15 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
     final roleColor = _roleColor(acc['role'] as String);
     final isActive  = acc['active'] as bool;
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 1.5,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
             // Avatar
@@ -187,24 +210,24 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
                   Row(children: [
                     Text(acc['name'] as String,
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2C1A0E))),
-                    const SizedBox(width: 6),
+                            fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF361F1A))),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: roleColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(acc['role'] as String,
-                          style: TextStyle(fontSize: 10, color: roleColor, fontWeight: FontWeight.w700)),
+                          style: TextStyle(fontSize: 10, color: roleColor, fontWeight: FontWeight.w800)),
                     ),
                   ]),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Row(children: [
-                    const Icon(Icons.email_outlined, size: 12, color: Color(0xFF9E7B5A)),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.email_outlined, size: 14, color: Color(0xFF504442)),
+                    const SizedBox(width: 6),
                     Text(acc['email'] as String,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF9E7B5A))),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
                   ]),
                 ],
               ),
@@ -401,8 +424,8 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(children: [
-        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF9E7B5A))),
+        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
       ]);
 }

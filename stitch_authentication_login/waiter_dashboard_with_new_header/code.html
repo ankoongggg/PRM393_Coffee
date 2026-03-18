@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#002204",
+              "outline": "#827471",
+              "on-primary-fixed": "#2b1611",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed": "#a3f69c",
+              "primary-fixed-dim": "#e5beb5",
+              "on-error-container": "#93000a",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed": "#001b3d",
+              "on-primary-fixed-variant": "#5c403a",
+              "on-secondary-fixed-variant": "#005312",
+              "surface-container-high": "#eae8e4",
+              "outline-variant": "#d4c3bf",
+              "tertiary-fixed": "#d6e3ff",
+              "surface-bright": "#fbf9f5",
+              "primary": "#361f1a",
+              "error": "#ba1a1a",
+              "secondary": "#1b6d24",
+              "on-surface": "#1b1c1a",
+              "tertiary": "#00244f",
+              "primary-container": "#4e342e",
+              "on-primary": "#ffffff",
+              "inverse-surface": "#30312e",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#fbf9f5",
+              "tertiary-fixed-dim": "#a9c7ff",
+              "secondary-fixed-dim": "#88d982",
+              "on-secondary-container": "#217128",
+              "on-primary-container": "#c19c94",
+              "inverse-primary": "#e5beb5",
+              "surface-dim": "#dbdad6",
+              "on-error": "#ffffff",
+              "secondary-container": "#a0f399",
+              "surface-container-highest": "#e4e2de",
+              "on-tertiary-container": "#6ca5ff",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed-variant": "#00468c",
+              "primary-fixed": "#ffdad2",
+              "surface-variant": "#e4e2de",
+              "inverse-on-surface": "#f2f0ed",
+              "surface-container-low": "#f5f3ef",
+              "on-surface-variant": "#504442",
+              "tertiary-container": "#003a76",
+              "on-background": "#1b1c1a",
+              "background": "#fbf9f5",
+              "surface-tint": "#755750",
+              "surface-container": "#efeeea"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "3xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #fbf9f5;
+        color: #1b1c1a;
+      }
+      .tonal-transition-surface-container {
+        background: linear-gradient(to top, #efeeea, #fbf9f5);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body selection:bg-primary-fixed selection:text-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#FDFBF7]/80 backdrop-blur-xl bg-white">
+<div class="flex justify-between items-center px-4 py-3 w-full border-b border-[#F5E6E1]">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-[#FFF4F1] border border-[#FFE0D8] flex items-center justify-center p-1.5">
+<div class="w-full h-full rounded-full bg-[#FFE0D8] flex items-center justify-center text-[#E65100]">
+<span class="material-symbols-outlined text-2xl">restaurant_menu</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-label text-[10px] font-extrabold uppercase tracking-wider text-[#E65100]">Waiter</span>
+<span class="font-headline font-bold text-[#361F1A] text-lg">Nguyễn Văn A</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full bg-[#FBF9F5] flex items-center justify-center text-[#5C403A] hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-[#FBF9F5] flex items-center justify-center text-[#5C403A] hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-2xl">logout</span>
+</button>
+</div>
+</div></header>
+<main class="pt-24 px-6 max-w-7xl mx-auto pb-12">
+<!-- Greeting Section -->
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-3 gap-3 mb-12">
+<div class="bg-secondary-container p-3 rounded-2xl flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-secondary-container text-lg" data-icon="restaurant">restaurant</span>
+<span class="font-label text-[8px] font-bold uppercase text-on-secondary-container/60">Occ.</span>
+</div>
+<div class="text-2xl font-headline font-bold text-on-secondary-container">08</div>
+</div>
+<div class="bg-surface-container-high p-3 rounded-2xl flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="event_seat">event_seat</span>
+<span class="font-label text-[8px] font-bold uppercase text-on-surface-variant">Avail.</span>
+</div>
+<div class="text-2xl font-headline font-bold text-primary">14</div>
+</div>
+<div class="bg-tertiary-fixed p-3 rounded-2xl flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-tertiary-fixed text-lg" data-icon="pending_actions">pending_actions</span>
+<span class="font-label text-[8px] font-bold uppercase text-on-tertiary-fixed/60">Res.</span>
+</div>
+<div class="text-2xl font-headline font-bold text-on-tertiary-fixed">02</div>
+</div>
+</div>
+<!-- Table Management Section -->
+<section>
+<div class="flex items-end mb-8">
+<div>
+<h3 class="font-headline text-2xl font-bold text-primary" style="">Table List</h3>
+<div class="h-1 w-12 bg-secondary-fixed-dim mt-2 rounded-full"></div>
+</div>
+</div>
+<!-- Table Map Visual Grid - Changed to 2 columns on mobile -->
+<div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+<!-- Table T.01 - Occupied -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.01</span>
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Occupied</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="schedule" style="">schedule</span>
+<span class="text-[10px] font-medium text-on-surface-variant" style="">45 mins ago</span>
+</div>
+</div>
+<!-- Table T.02 - Available -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.02</span>
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Available</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="person" style="">person</span>
+<span class="text-[10px] font-medium text-on-surface-variant" style="">Seats 4</span>
+</div>
+</div>
+<!-- Table T.03 - Reserved -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.03</span>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Reserved</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2 text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today" style="">calendar_today</span>
+<span class="text-[10px] font-medium" style="">14:00 PM</span>
+</div>
+</div>
+<!-- Table T.04 - Occupied -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.04</span>
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Occupied</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="restaurant_menu" style="">restaurant_menu</span>
+<span class="text-[10px] font-medium text-on-surface-variant" style="">3 Items Waiting</span>
+</div>
+</div>
+<!-- Table T.05 - Available -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.05</span>
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Available</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="person" style="">person</span>
+<span class="text-[10px] font-medium text-on-surface-variant" style="">Seats 2</span>
+</div>
+</div>
+<!-- Table T.06 - Occupied -->
+<div class="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(54,31,26,0.04)] relative group transition-all hover:bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="font-headline font-extrabold text-xl text-primary" style="">T.06</span>
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col gap-1 mb-4">
+<span class="font-label text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/60" style="">Status</span>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold inline-block w-fit" style="">Occupied</span>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/5 flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-sm" data-icon="priority_high" style="">priority_high</span>
+<span class="text-[10px] font-bold" style="">Check Req</span>
+</div>
+</div>
+<!-- New Table Add Card -->
+</div>
+</section>
+<!-- Ongoing Tasks / Quick Actions -->
+<section class="mt-16">
+<h3 class="font-headline text-2xl font-bold text-primary mb-6" style="">Staff Quick Actions</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex items-center gap-4 bg-surface-container p-4 rounded-2xl hover:bg-surface-container-high transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart" style="">add_shopping_cart</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-bold text-primary" style="">New Order</span>
+<span class="font-label text-xs text-on-surface-variant" style="">Quick tap to assign order to table</span>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-surface-container p-4 rounded-2xl hover:bg-surface-container-high transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined" data-icon="cleaning_services" style="">cleaning_services</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-bold text-primary" style="">Sanitize Table</span>
+<span class="font-label text-xs text-on-surface-variant" style="">Request cleanup for Available tables</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+</body></html>

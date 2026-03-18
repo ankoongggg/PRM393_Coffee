@@ -24,12 +24,12 @@ class _LoginScreenState extends State<LoginScreen>
   late List<Animation<double>> _staggerAnimations;
 
   // ── Màu sắc theo template HTML ──
-  static const _coffeeDark = Color(0xFF3E2723);
-  static const _coffeeMedium = Color(0xFF6F4E37);
-  static const _coffeeLight = Color(0xFFD7CCC8);
-  static const _coffeeCream = Color(0xFFF5F5DC);
-  static const _coffeeAccent = Color(0xFF606C38);
-  static const _bgColor = Color(0xFFFDFBF7);
+  static const _coffeeDark = Color(0xFF361F1A);
+  static const _coffeeMedium = Color(0xFF504442);
+  static const _coffeeLight = Color(0xFFE4E2DE);
+  static const _coffeeCream = Color(0xFFFBF9F5);
+  static const _coffeeAccent = Color(0xFF1B6D24);
+  static const _bgColor = Color(0xFFFBF9F5);
 
   // Dữ liệu vai trò theo template
   static const _roleData = <UserRole, _RoleInfo>{
@@ -209,19 +209,19 @@ class _LoginScreenState extends State<LoginScreen>
             decoration: BoxDecoration(
               color: _coffeeDark,
               shape: BoxShape.circle,
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: _coffeeDark.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: Color.fromRGBO(54, 31, 26, 0.15),
+                  blurRadius: 40,
+                  offset: Offset(0, 12),
                 ),
               ],
               border: Border.all(
-                color: _coffeeLight.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.1),
                 width: 8,
               ),
             ),
-            child: const Icon(Icons.coffee_rounded, size: 44, color: Color(0xFFF5F5DC)),
+            child: const Icon(Icons.coffee_rounded, size: 44, color: Color(0xFFFBF9F5)),
           ),
           const SizedBox(height: 24),
 
@@ -331,13 +331,13 @@ class _LoginScreenState extends State<LoginScreen>
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _coffeeLight.withValues(alpha: 0.3)),
-            boxShadow: [
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFF0EBE6)),
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
+                color: Color.fromRGBO(54, 31, 26, 0.04),
+                blurRadius: 24,
+                offset: Offset(0, 12),
               ),
             ],
           ),
@@ -435,9 +435,9 @@ class _LoginScreenState extends State<LoginScreen>
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: info.iconBgColor.withValues(alpha: 0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+                      color: info.iconBgColor.withOpacity(0.2),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -497,20 +497,20 @@ class _LoginScreenState extends State<LoginScreen>
   InputDecoration _inputDecoration({required String label, required IconData icon}) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF9E7B5A), fontWeight: FontWeight.w500),
-      prefixIcon: Icon(icon, color: const Color(0xFF9E7B5A), size: 20),
+      labelStyle: const TextStyle(color: Color(0xFF504442), fontWeight: FontWeight.w600),
+      prefixIcon: Icon(icon, color: const Color(0xFF504442), size: 20),
       filled: true,
-      fillColor: const Color(0xFFFAF6F1),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      fillColor: const Color(0xFFFDFBF7),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: _coffeeMedium.withValues(alpha: 0.1)),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFF0EBE6)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: _coffeeMedium, width: 1.5),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF361F1A), width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
     );
   }
 }
@@ -559,15 +559,15 @@ class _RoleCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFD7CCC8).withValues(alpha: 0.3),
+              color: const Color(0xFFF0EBE6),
             ),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Color.fromRGBO(54, 31, 26, 0.04),
+                blurRadius: 20,
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -594,8 +594,8 @@ class _RoleCard extends StatelessWidget {
                       title,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF3E2723),
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF361F1A),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -603,7 +603,7 @@ class _RoleCard extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,
-                        color: const Color(0xFF6F4E37).withValues(alpha: 0.7),
+                        color: const Color(0xFF504442).withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),

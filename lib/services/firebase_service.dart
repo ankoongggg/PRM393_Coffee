@@ -132,7 +132,7 @@ class FirebaseService {
       final snap = await tx.get(ref);
       if (!snap.exists) return;
 
-      final data = snap.data() as Map<String, dynamic>? ?? {};
+      final data = snap.data() ?? {};
       final currentOrderStatus = data['status'] as String?;
       if (currentOrderStatus == 'cancelled' || currentOrderStatus == 'served') {
         return;

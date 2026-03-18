@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/order_provider.dart';
-import '../../../core/enums/order_status.dart';
 import '../../../widgets/date_range_filter_field.dart';
 
 class TableOrdersScreen extends StatefulWidget {
@@ -122,29 +121,31 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                 .where((o) {
                   final start = _startOfDay(_fromDate!);
                   final end = _endOfDay(_toDate!);
-                  final t = o.createdAt as DateTime;
+                  final t = o.createdAt;
                   return !t.isBefore(start) && !t.isAfter(end);
                 })
                 .toList();
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFAF6F1),
+          backgroundColor: const Color(0xFFFBF9F5),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFFFBF9F5),
+            elevation: 0,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Bàn ${widget.tableNumber}',
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+                color: Color(0xFF361F1A),
+                fontWeight: FontWeight.w800,
               ),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
                 onPressed: () => orderProvider.startOrderListener(),
               ),
             ],
@@ -153,12 +154,13 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
             children: [
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.transparent),
+                  boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
                 ),
                 child: DateRangeFilterField(
                   fromDate: _fromDate,
@@ -226,13 +228,12 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -243,16 +244,17 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                 'Tổng đơn',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF9E7B5A),
+                  color: Color(0xFF504442),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 '${orders.length}',
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6F4E37),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF361F1A),
                 ),
               ),
             ],
@@ -268,16 +270,17 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                 'Tổng món',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF9E7B5A),
+                  color: Color(0xFF504442),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 '$totalItems',
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6F4E37),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF361F1A),
                 ),
               ),
             ],
@@ -293,16 +296,17 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                 'Tổng tiền',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF9E7B5A),
+                  color: Color(0xFF504442),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 '${_formatPrice(totalAmount)}đ',
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1B6D24),
                 ),
               ),
             ],
@@ -321,12 +325,16 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
     final dateStr = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     final timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 1.5,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -334,34 +342,36 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.id.substring(0, 8).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2C1A0E),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.id.substring(0, 8).toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF361F1A),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Ngày: $dateStr',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF9E7B5A),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ngày: $dateStr',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF504442),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Giờ: $timeStr',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF9E7B5A),
+                        Text(
+                          'Giờ: $timeStr',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF504442),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -377,15 +387,15 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       color: statusColor,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFF0EBE6)),
+            const SizedBox(height: 12),
             // Hiển thị các item
             ...order.items.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -401,8 +411,9 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                       child: Text(
                         '${item.quantity}x ${item.menuItemName}',
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF2C1A0E),
+                          fontSize: 13,
+                          color: Color(0xFF361F1A),
+                          fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -412,9 +423,9 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                     Text(
                       '${_formatPrice(item.unitPrice)}đ',
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2C1A0E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF361F1A),
                       ),
                     ),
                   ],
@@ -433,17 +444,17 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                 const Text(
                   'Tổng:',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6F4E37),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF361F1A),
                   ),
                 ),
                 Text(
                   '${_formatPrice(order.totalAmount)}đ',
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1B6D24),
                   ),
                 ),
               ],
@@ -451,6 +462,7 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -107,18 +107,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final isCompleted = status == 'completed';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F1),
+      backgroundColor: const Color(0xFFFBF9F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F4E37),
+        backgroundColor: const Color(0xFFFBF9F5),
+        elevation: 0,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Đơn ${_order['id']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('Đơn ${_order['id']}', style: const TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
         actions: [
           if (!isCancelled && !isCompleted && status != 'served')
             IconButton(
-              icon: const Icon(Icons.cancel_outlined, color: Colors.white70),
+              icon: const Icon(Icons.cancel_outlined, color: Color(0xFF361F1A)),
               tooltip: 'Hủy đơn',
               onPressed: _cancelOrder,
             ),
@@ -142,14 +144,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F4E37),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: const Color(0xFF361F1A),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   icon: const Icon(Icons.arrow_forward, color: Colors.white),
                   label: Text(
                     'Chuyển sang: ${_statusLabel(_statusFlow[_statusFlow.indexOf(status) + 1])}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
                   ),
                   onPressed: _advanceStatus,
                 ),
@@ -165,8 +168,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,22 +178,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Thông tin đơn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2C1A0E))),
+              const Text('Thông tin đơn', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF361F1A))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _statusColor(_order['status']).withValues(alpha: 0.1),
+                  color: _statusColor(_order['status']).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(_statusLabel(_order['status']), style: TextStyle(color: _statusColor(_order['status']), fontWeight: FontWeight.bold, fontSize: 12)),
+                child: Text(_statusLabel(_order['status']), style: TextStyle(color: _statusColor(_order['status']), fontWeight: FontWeight.w800, fontSize: 12)),
               ),
             ],
           ),
-          const Divider(height: 20),
+          const Divider(height: 24, color: Color(0xFFF0EBE6)),
           _infoRow(Icons.table_bar, 'Bàn số', '${_order['table']}'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _infoRow(Icons.person_outline, 'Nhân viên', _order['waiter']),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _infoRow(Icons.access_time, 'Giờ tạo', _order['time']),
         ],
       ),
@@ -198,10 +202,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _infoRow(IconData icon, String label, String value) => Row(
     children: [
-      Icon(icon, size: 16, color: const Color(0xFF9E7B5A)),
+      Icon(icon, size: 16, color: const Color(0xFF504442)),
       const SizedBox(width: 8),
-      Text('$label: ', style: const TextStyle(fontSize: 13, color: Color(0xFF9E7B5A))),
-      Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2C1A0E))),
+      Text('$label: ', style: const TextStyle(fontSize: 13, color: Color(0xFF504442), fontWeight: FontWeight.w500)),
+      Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF361F1A))),
     ],
   );
 
@@ -217,14 +221,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Trạng thái', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2C1A0E))),
-          const SizedBox(height: 16),
+          const Text('Trạng thái', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF361F1A))),
+          const SizedBox(height: 20),
           Row(
             children: List.generate(steps.length, (i) {
               final done = i <= currentIndex && !(_order['status'] == 'cancelled');
@@ -240,13 +245,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: done ? const Color(0xFF6F4E37) : const Color(0xFFE8D5C0),
-                              border: isCurrent ? Border.all(color: const Color(0xFFD4A864), width: 2.5) : null,
+                              color: done ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
+                              border: isCurrent ? Border.all(color: const Color(0xFF361F1A).withOpacity(0.5), width: 2.5) : null,
                             ),
-                            child: Icon(steps[i]['icon'] as IconData, size: 18, color: done ? Colors.white : const Color(0xFF9E7B5A)),
+                            child: Icon(steps[i]['icon'] as IconData, size: 18, color: done ? Colors.white : const Color(0xFF504442)),
                           ),
-                          const SizedBox(height: 4),
-                          Text(steps[i]['label'] as String, style: TextStyle(fontSize: 9, color: done ? const Color(0xFF6F4E37) : const Color(0xFF9E7B5A), fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal), textAlign: TextAlign.center),
+                          const SizedBox(height: 6),
+                          Text(steps[i]['label'] as String, style: TextStyle(fontSize: 10, color: done ? const Color(0xFF361F1A) : const Color(0xFF504442), fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
@@ -255,8 +260,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         flex: 0,
                         child: Container(
                           height: 2,
-                          width: 20,
-                          color: i < currentIndex ? const Color(0xFF6F4E37) : const Color(0xFFE8D5C0),
+                          width: 24,
+                          color: i < currentIndex ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
                         ),
                       ),
                   ],
@@ -275,14 +280,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.transparent),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Danh sách món', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2C1A0E))),
-          const Divider(height: 20),
+          const Text('Danh sách món', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF361F1A))),
+          const Divider(height: 24, color: Color(0xFFF0EBE6)),
           ...items.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
@@ -291,17 +297,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5E6D3),
-                    borderRadius: BorderRadius.circular(6),
+                    color: const Color(0xFFFDFBF7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE4E2DE)),
                   ),
-                  child: const Icon(Icons.local_cafe, size: 14, color: Color(0xFF9E7B5A)),
+                  child: const Icon(Icons.local_cafe, size: 14, color: Color(0xFF504442)),
                 ),
-                const SizedBox(width: 10),
-                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 13, color: Color(0xFF2C1A0E)))),
-                Text('x${item['qty']}', style: const TextStyle(fontSize: 13, color: Color(0xFF9E7B5A))),
+                const SizedBox(width: 12),
+                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 14, color: Color(0xFF361F1A), fontWeight: FontWeight.w500))),
+                Text('x${item['qty']}', style: const TextStyle(fontSize: 13, color: Color(0xFF504442), fontWeight: FontWeight.w700)),
                 const SizedBox(width: 12),
                 Text('${_formatPrice((item['qty'] as int) * (item['price'] as int))}đ',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF6F4E37))),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
               ],
             ),
           )),
@@ -314,14 +321,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF6F4E37),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF361F1A),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.4), blurRadius: 20, offset: Offset(0, 8))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Tổng cộng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-          Text('${_formatPrice(_total)}đ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+          const Text('Tổng cộng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+          Text('${_formatPrice(_total)}đ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 22)),
         ],
       ),
     );
