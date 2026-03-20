@@ -65,6 +65,14 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
       try {
         final orderProvider = Provider.of<OrderProvider>(context, listen: false);
         final tableProvider = Provider.of<TableProvider>(context, listen: false);
+
+        // ✅ Chuyển tất cả order đang phục vụ sang completed để hoàn thành và trừ kho tự động
+        final tableOrders = orderProvider.ordersByTable(widget.tableId);
+        for (final order in tableOrders) {
+          if (order.status != OrderStatus.cancelled && order.status != OrderStatus.served) {
+            await orderProvider.updateOrderStatus(order.id, OrderStatus.completed);
+          }
+        }
         
         await tableProvider.setTableAvailable(widget.tableId);
 
@@ -89,66 +97,23 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
     return Consumer<OrderProvider>(
       builder: (context, orderProvider, _) {
         final tableOrders = orderProvider.ordersByTable(widget.tableId);
-        final completedOrders = tableOrders.where((o) => o.status == OrderStatus.completed).toList();
-        final hasUncompletedOrders = tableOrders.where((o) => o.status == OrderStatus.pending || o.status == OrderStatus.preparing).isNotEmpty;
+        final activeOrders = tableOrders.where((o) => o.status != OrderStatus.cancelled && o.status != OrderStatus.served).toList();
         
-        // Màn chờ rỗng (Không có order hoàn thành nào)
-        if (completedOrders.isEmpty) {
+        if (activeOrders.isEmpty) {
           return Scaffold(
             backgroundColor: _bgWarm,
             body: SafeArea(
               child: Column(
                 children: [
                   _buildHeader(),
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.hourglass_empty_rounded, size: 64, color: Colors.orange[400]),
-                          const SizedBox(height: 16),
-                          const Text('Chờ Barista hoàn thành...', style: TextStyle(fontSize: 16, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 24),
-                          if (hasUncompletedOrders)
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 40),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF3C7),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text('Đơn đang xử lý:', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
-                                  const SizedBox(height: 8),
-                                  ...tableOrders.where((o) => o.status != OrderStatus.completed).map(
-                                    (o) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(o.status == OrderStatus.preparing ? Icons.local_drink : Icons.access_time_rounded, size: 14, color: const Color(0xFFD97706)),
-                                          const SizedBox(width: 6),
-                                          Text(o.status.displayName.toUpperCase(), style: const TextStyle(fontSize: 12, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
-                                        ],
-                                      ),
-                                    )
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  const Expanded(child: Center(child: Text('Không có đơn hàng nào', style: TextStyle(color: Colors.grey)))),
                 ],
               ),
             ),
           );
         }
 
-        final currentOrder = completedOrders.first;
+        final currentOrder = activeOrders.first;
         double totalAmount = currentOrder.totalAmount;
         int totalItems = currentOrder.items.length;
 
@@ -252,14 +217,14 @@ class _ServedOrderScreenState extends State<ServedOrderScreen> {
                         height: 54,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: (!hasUncompletedOrders && !_isProcessing) ? _emerald600 : Colors.grey[300],
+                            backgroundColor: !_isProcessing ? _emerald600 : Colors.grey[300],
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: (!hasUncompletedOrders && !_isProcessing) ? 4 : 0,
+                            elevation: !_isProcessing ? 4 : 0,
                           ),
                           icon: const Icon(Icons.check_circle_outline_rounded),
                           label: const Text('XÁC NHẬN ĐÃ THANH TOÁN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1)),
-                          onPressed: (!hasUncompletedOrders && !_isProcessing) ? _onComplete : null,
+                          onPressed: !_isProcessing ? _onComplete : null,
                         ),
                       ),
                     ],

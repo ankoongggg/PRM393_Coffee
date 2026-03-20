@@ -63,8 +63,22 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
-  void _increment(String id) =>
-      setState(() => _cart[id] = (_cart[id] ?? 0) + 1);
+  void _increment(String id) {
+    final menuProvider = Provider.of<MenuProvider>(context, listen: false);
+    try {
+      final item = menuProvider.menuItems.firstWhere((m) => m.id == id);
+      if ((_cart[id] ?? 0) < item.quantity) {
+        setState(() => _cart[id] = (_cart[id] ?? 0) + 1);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Món ${item.name} đã hết nguyên liệu để làm thêm!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (_) {}
+  }
 
   void _decrement(String id) => setState(() {
     if ((_cart[id] ?? 0) <= 1) {
@@ -202,7 +216,8 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           totalAmount: _totalPrice,
         );
         if (newId != null) {
-          await tableProvider.setTableWaiting(widget.tableId, newId);
+          // Bỏ qua Barista, chuyển bàn sang Phục vụ luôn
+          await tableProvider.setTableOccupied(widget.tableId, newId);
           isSuccess = true;
         }
       }
@@ -289,7 +304,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
                                         child: Image.network(
                                           item.imageURL, // ✅ SỬA TẠI ĐÂY
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
+                                          errorBuilder: (_, _, _) =>
                                               const Icon(
                                                 Icons.local_cafe_rounded,
                                                 color: _coffee200,

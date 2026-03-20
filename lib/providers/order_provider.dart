@@ -15,6 +15,10 @@ class OrderProvider extends ChangeNotifier {
   String? _error;
   StreamSubscription? _orderSubscription;
 
+  // ✅ Theo dõi các order đã trừ kho để tránh trừ trùng
+  final Set<String> _deductedOrderIds = {};
+  bool _isFirstStreamLoad = true;
+
   List<OrderModel> get orders => List.unmodifiable(_orders);
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -26,9 +30,13 @@ class OrderProvider extends ChangeNotifier {
   void startOrderListener() {
     _orderSubscription?.cancel();
     _setLoading(true);
+    _isFirstStreamLoad = true;
 
     _orderSubscription = _firebaseService.getOrdersStream().listen(
           (newList) {
+        // ✅ Phát hiện order vừa chuyển sang completed để trừ kho
+        _detectAndDeductCompleted(newList);
+
         _orders = newList;
         _error = null;
         _setLoading(false);
@@ -40,6 +48,35 @@ class OrderProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+  }
+
+  /// ✅ So sánh danh sách cũ và mới, nếu order chuyển sang completed → trừ kho
+  void _detectAndDeductCompleted(List<OrderModel> newList) {
+    if (_isFirstStreamLoad) {
+      // Lần đầu load: đánh dấu các order đã completed là đã trừ (tránh trừ lại)
+      for (final order in newList) {
+        if (order.status == OrderStatus.completed || order.status == OrderStatus.served) {
+          _deductedOrderIds.add(order.id);
+        }
+      }
+      _isFirstStreamLoad = false;
+      return;
+    }
+
+    for (final newOrder in newList) {
+      if (newOrder.status != OrderStatus.completed) continue;
+      if (_deductedOrderIds.contains(newOrder.id)) continue;
+
+      // Kiểm tra xem order này trước đó chưa completed
+      final oldOrder = _orders.where((o) => o.id == newOrder.id).firstOrNull;
+      final wasNotCompleted = oldOrder == null || oldOrder.status != OrderStatus.completed;
+
+      if (wasNotCompleted) {
+        _deductedOrderIds.add(newOrder.id);
+        _deductInventory(newOrder.id);
+        print('🏪 Auto-deduct kho cho order ${newOrder.id} (status → completed)');
+      }
+    }
   }
 
   // --- QUERIES ---
@@ -122,20 +159,14 @@ class OrderProvider extends ChangeNotifier {
 
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
-      print('--- Bắt đầu cập nhật trạng thái: $newStatus ---');
+      // Cập nhật trạng thái đơn hàng
       await _firestore.collection('orders').doc(orderId).update({
         'status': newStatus.toString().split('.').last,
       });
-
-      // ✅ Phải khớp chính xác với Enum của bạn (thường là OrderStatus.completed)
-      if (newStatus == OrderStatus.completed) {
-        print('🚀 Kích hoạt trừ kho cho đơn: $orderId');
-        await _deductInventory(orderId);
-      }
+      // ✅ Trừ kho được xử lý tự động trong stream listener (_detectAndDeductCompleted)
       notifyListeners();
     } catch (e) {
       print('❌ Lỗi updateOrderStatus: $e');
-      throw Exception('Lỗi khi cập nhật trạng thái đơn hàng: $e');
     }
   }
 
@@ -146,49 +177,47 @@ class OrderProvider extends ChangeNotifier {
 
       final List items = orderDoc.data()?['items'] ?? [];
 
+      // ✅ Bước 1: Thu thập tổng lượng cần trừ cho từng nguyên liệu
+      final Map<String, double> deductions = {};
+
       for (var itemData in items) {
         final String menuItemId = itemData['menuItemId'];
-        final int quantityOrdered = itemData['quantity']; // Số lượng khách mua
+        final int quantityOrdered = (itemData['quantity'] as num).toInt();
 
-        final menuRef = _firestore.collection('menuItems').doc(menuItemId);
+        final menuSnap = await _firestore.collection('menuItems').doc(menuItemId).get();
+        if (menuSnap.exists && menuSnap.data()!.containsKey('recipe')) {
+          final recipe = Map<String, dynamic>.from(menuSnap.data()!['recipe']);
 
-        // --- BƯỚC MỚI: TRỪ TRỰC TIẾP QUANTITY CỦA MÓN ĂN (Cái số 50 của bạn) ---
-        await _firestore.runTransaction((transaction) async {
-          final menuSnap = await transaction.get(menuRef);
-          if (menuSnap.exists) {
-            // Lấy quantity hiện tại (kiểu num để an toàn)
-            final currentQty = (menuSnap.data()?['quantity'] as num?)?.toInt() ?? 0;
-            final newQty = (currentQty - quantityOrdered) > 0 ? (currentQty - quantityOrdered) : 0;
-
-            transaction.update(menuRef, {'quantity': newQty});
-            print('📉 Món $menuItemId: $currentQty -> $newQty');
-          }
-        });
-
-        // --- BƯỚC CŨ: TRỪ NGUYÊN LIỆU TRONG KHO (Giữ nguyên logic của bạn) ---
-        final menuDoc = await menuRef.get();
-        if (menuDoc.exists && menuDoc.data()!.containsKey('recipe')) {
-          final recipe = Map<String, dynamic>.from(menuDoc.data()!['recipe']);
           for (var entry in recipe.entries) {
             final String ingredientId = entry.key;
             final double dosage = (entry.value as num).toDouble();
-            final double qtyNeeded = dosage * quantityOrdered;
-
-            final ingRef = _firestore.collection('ingredients').doc(ingredientId);
-            await _firestore.runTransaction((transaction) async {
-              final snapshot = await transaction.get(ingRef);
-              if (snapshot.exists) {
-                final currentStock = (snapshot.data()?['stock'] as num?)?.toDouble() ?? 0;
-                final newStock = (currentStock - qtyNeeded) > 0 ? (currentStock - qtyNeeded) : 0.0;
-                transaction.update(ingRef, {'stock': newStock});
-              }
-            });
+            final double totalDeduct = dosage * quantityOrdered;
+            deductions[ingredientId] = (deductions[ingredientId] ?? 0) + totalDeduct;
           }
         }
       }
-      print('✅ Đã trừ xong cả món ăn và nguyên liệu!');
+
+      // ✅ Bước 2: Dùng Transaction để đọc-ghi atomic, đảm bảo stock KHÔNG BAO GIỜ ÂM
+      for (var entry in deductions.entries) {
+        final ingRef = _firestore.collection('ingredients').doc(entry.key);
+
+        await _firestore.runTransaction((tx) async {
+          final ingSnap = await tx.get(ingRef);
+          if (!ingSnap.exists) return;
+
+          final currentStock = (ingSnap.data()?['stock'] ?? 0).toDouble();
+          // Trừ tối đa bằng stock hiện có, clamp về 0 nếu bị âm
+          final newStock = (currentStock - entry.value).clamp(0.0, double.infinity);
+          tx.update(ingRef, {'stock': newStock});
+        });
+      }
+
+      // Sau khi trừ xong, thông báo cho các Provider khác load lại dữ liệu
+      notifyListeners();
+      print('✅ Đã thực thi trừ kho bằng Transaction thành công!');
+
     } catch (e) {
-      print('❌ Lỗi trừ kho: $e');
+      print('❌ Lỗi hệ thống trừ kho: $e');
     }
   }
 

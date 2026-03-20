@@ -1,3 +1,4 @@
+import 'dart:async'; // ✅ Thêm import này
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ingredient_model.dart';
@@ -5,36 +6,59 @@ import '../models/ingredient_model.dart';
 class IngredientProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<IngredientModel> _ingredients = [];
-  bool isLoading = false;
+  bool _isLoading = false;
+  StreamSubscription? _ingredientSub;
 
   List<IngredientModel> get ingredients => _ingredients;
+  bool get isLoading => _isLoading;
 
-  // Lắng nghe dữ liệu realtime từ Firebase
+  // ✅ Tự động khởi động listener khi Provider được tạo (giống MenuProvider, OrderProvider)
+  IngredientProvider() {
+    startIngredientListener();
+  }
+
+  // ✅ Lắng nghe dữ liệu realtime
   void startIngredientListener() {
-    isLoading = true;
+    if (_ingredientSub != null) return; // Tránh lắng nghe trùng lặp
+
+    _isLoading = true;
     notifyListeners();
 
-    _firestore.collection('ingredients').orderBy('name').snapshots().listen((snapshot) {
+    _ingredientSub = _firestore
+        .collection('ingredients')
+        .orderBy('name')
+        .snapshots()
+        .listen((snapshot) {
       _ingredients = snapshot.docs
           .map((doc) => IngredientModel.fromMap(doc.id, doc.data()))
           .toList();
-      isLoading = false;
-      notifyListeners();
+      _isLoading = false;
+      notifyListeners(); // 🚀 Ép UI (InventoryScreen và Menu) vẽ lại
+      print('📦 Kho đã cập nhật dữ liệu mới từ Firebase');
     });
   }
 
   // Thêm nguyên liệu mới
   Future<void> addIngredient(IngredientModel ingredient) async {
-    await _firestore.collection('ingredients').add(ingredient.toMap());
+    try {
+      await _firestore.collection('ingredients').add(ingredient.toMap());
+    } catch (e) {
+      print('❌ Lỗi thêm nguyên liệu: $e');
+    }
   }
 
-  // Cập nhật nguyên liệu
+  // Cập nhật nguyên liệu (Sửa số lượng thủ công)
   Future<void> updateIngredient(String id, Map<String, dynamic> data) async {
-    await _firestore.collection('ingredients').doc(id).update(data);
+    try {
+      await _firestore.collection('ingredients').doc(id).update(data);
+    } catch (e) {
+      print('❌ Lỗi cập nhật: $e');
+    }
   }
 
-  // Xóa nguyên liệu
-  Future<void> deleteIngredient(String id) async {
-    await _firestore.collection('ingredients').doc(id).delete();
+  @override
+  void dispose() {
+    _ingredientSub?.cancel(); // ✅ Hủy lắng nghe khi không dùng nữa
+    super.dispose();
   }
 }

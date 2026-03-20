@@ -220,7 +220,7 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
             children: [
               DropdownButtonFormField<String>(
                 hint: const Text('Chọn nguyên liệu'),
-                value: localSelectedId,
+                initialValue: localSelectedId,
                 items: ingredients.map((ing) => DropdownMenuItem(
                   value: ing.id,
                   child: Text('${ing.name} (${ing.unit})'),
@@ -303,7 +303,7 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
 
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCategory,
+      initialValue: _selectedCategory,
       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
       onChanged: (v) => setState(() => _selectedCategory = v!),
       decoration: const InputDecoration(filled: true, fillColor: Color(0xFFFAF6F1), border: InputBorder.none),
@@ -315,7 +315,7 @@ class _AddEditMenuItemScreenState extends State<AddEditMenuItemScreen> {
       title: const Text('Trạng thái có sẵn', style: TextStyle(fontWeight: FontWeight.bold)),
       value: _isAvailable,
       onChanged: (v) => setState(() => _isAvailable = v),
-      activeColor: const Color(0xFF6F4E37),
+      activeThumbColor: const Color(0xFF6F4E37),
     );
   }
 

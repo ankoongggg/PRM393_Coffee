@@ -4,7 +4,6 @@ import '../../../providers/ingredient_provider.dart';
 import '../../../models/ingredient_model.dart';
 import '../../../routes/app_routes.dart';
 import '../manager_navigation_bar.dart';
-import '../manager_navigation_bar.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
