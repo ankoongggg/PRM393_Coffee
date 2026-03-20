@@ -15,7 +15,6 @@ class OrderProvider extends ChangeNotifier {
   String? _error;
   StreamSubscription? _orderSubscription;
 
-  // Getters
   List<OrderModel> get orders => List.unmodifiable(_orders);
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -43,27 +42,19 @@ class OrderProvider extends ChangeNotifier {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // QUERIES (Sửa lỗi thiếu method ordersByTable)
-  // ─────────────────────────────────────────────────────────────
-
-  /// ✅ Lấy danh sách đơn hàng của một bàn cụ thể
+  // --- QUERIES ---
   List<OrderModel> ordersByTable(String tableId) {
     return _orders.where((o) => o.tableId == tableId).toList();
   }
 
-  // Barista: lọc order theo trạng thái
   List<OrderModel> get pendingOrders =>
       _orders.where((o) => o.status == OrderStatus.pending).toList();
 
   List<OrderModel> get preparingOrders =>
       _orders.where((o) => o.status == OrderStatus.preparing).toList();
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE & UPDATE ORDERS
-  // ─────────────────────────────────────────────────────────────
+  // --- CREATE & UPDATE ---
 
-  /// ✅ Thêm món vào đơn hàng hiện có (Cộng dồn)
   Future<bool> addItemsToExistingOrder({
     required String orderId,
     required List<OrderItemModel> newItems,
@@ -78,8 +69,6 @@ class OrderProvider extends ChangeNotifier {
       final batchId = 'add_${DateTime.now().millisecondsSinceEpoch}';
 
       for (var newItem in newItems) {
-        // ✅ Không cộng dồn vào món đã "isDone: true"
-        // Chúng ta cứ add mới vào list để Barista thấy món mới cần pha
         final itemWithBatch = OrderItemModel(
           menuItemId: newItem.menuItemId,
           menuItemName: newItem.menuItemName,
@@ -98,18 +87,15 @@ class OrderProvider extends ChangeNotifier {
         'totalAmount': currentTotal,
         'updatedAt': FieldValue.serverTimestamp(),
         'batchStatus.$batchId': 'pending',
-        // Có món mới => đẩy overall về pending để Barista thấy card mới
         'status': 'pending',
       });
-
       return true;
     } catch (e) {
-      print('❌ Lỗi: $e');
+      print('❌ Lỗi thêm món: $e');
       return false;
     }
   }
 
-  /// Tạo order mới hoàn toàn
   Future<String?> createOrder({
     required String tableId,
     required int tableNumber,
@@ -134,12 +120,75 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
-      final statusString = status.toString().split('.').last;
-      await _firebaseService.updateOrderStatus(orderId, statusString);
+      print('--- Bắt đầu cập nhật trạng thái: $newStatus ---');
+      await _firestore.collection('orders').doc(orderId).update({
+        'status': newStatus.toString().split('.').last,
+      });
+
+      // ✅ Phải khớp chính xác với Enum của bạn (thường là OrderStatus.completed)
+      if (newStatus == OrderStatus.completed) {
+        print('🚀 Kích hoạt trừ kho cho đơn: $orderId');
+        await _deductInventory(orderId);
+      }
+      notifyListeners();
     } catch (e) {
-      _error = 'Lỗi cập nhật trạng thái: $e';
+      print('❌ Lỗi updateOrderStatus: $e');
+      throw Exception('Lỗi khi cập nhật trạng thái đơn hàng: $e');
+    }
+  }
+
+  Future<void> _deductInventory(String orderId) async {
+    try {
+      final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+      if (!orderDoc.exists) return;
+
+      final List items = orderDoc.data()?['items'] ?? [];
+
+      for (var itemData in items) {
+        final String menuItemId = itemData['menuItemId'];
+        final int quantityOrdered = itemData['quantity']; // Số lượng khách mua
+
+        final menuRef = _firestore.collection('menuItems').doc(menuItemId);
+
+        // --- BƯỚC MỚI: TRỪ TRỰC TIẾP QUANTITY CỦA MÓN ĂN (Cái số 50 của bạn) ---
+        await _firestore.runTransaction((transaction) async {
+          final menuSnap = await transaction.get(menuRef);
+          if (menuSnap.exists) {
+            // Lấy quantity hiện tại (kiểu num để an toàn)
+            final currentQty = (menuSnap.data()?['quantity'] as num?)?.toInt() ?? 0;
+            final newQty = (currentQty - quantityOrdered) > 0 ? (currentQty - quantityOrdered) : 0;
+
+            transaction.update(menuRef, {'quantity': newQty});
+            print('📉 Món $menuItemId: $currentQty -> $newQty');
+          }
+        });
+
+        // --- BƯỚC CŨ: TRỪ NGUYÊN LIỆU TRONG KHO (Giữ nguyên logic của bạn) ---
+        final menuDoc = await menuRef.get();
+        if (menuDoc.exists && menuDoc.data()!.containsKey('recipe')) {
+          final recipe = Map<String, dynamic>.from(menuDoc.data()!['recipe']);
+          for (var entry in recipe.entries) {
+            final String ingredientId = entry.key;
+            final double dosage = (entry.value as num).toDouble();
+            final double qtyNeeded = dosage * quantityOrdered;
+
+            final ingRef = _firestore.collection('ingredients').doc(ingredientId);
+            await _firestore.runTransaction((transaction) async {
+              final snapshot = await transaction.get(ingRef);
+              if (snapshot.exists) {
+                final currentStock = (snapshot.data()?['stock'] as num?)?.toDouble() ?? 0;
+                final newStock = (currentStock - qtyNeeded) > 0 ? (currentStock - qtyNeeded) : 0.0;
+                transaction.update(ingRef, {'stock': newStock});
+              }
+            });
+          }
+        }
+      }
+      print('✅ Đã trừ xong cả món ăn và nguyên liệu!');
+    } catch (e) {
+      print('❌ Lỗi trừ kho: $e');
     }
   }
 
@@ -165,7 +214,6 @@ class OrderProvider extends ChangeNotifier {
       await _firestore.collection('orders').doc(orderId).update({
         'items': items.map((e) => e.toMap()).toList(),
       });
-      // Không cần notifyListeners vì stream sẽ tự cập nhật dữ liệu mới
     } catch (e) {
       print("❌ Lỗi cập nhật món: $e");
       rethrow;
@@ -179,10 +227,6 @@ class OrderProvider extends ChangeNotifier {
       _error = 'Lỗi hủy đơn: $e';
     }
   }
-
-  // ─────────────────────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────────────────────
 
   void _setLoading(bool value) {
     _isLoading = value;

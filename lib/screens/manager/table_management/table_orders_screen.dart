@@ -206,7 +206,7 @@ class _TableOrdersScreenState extends State<TableOrdersScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                         itemCount: tableOrders.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (_, i) => _buildOrderCard(tableOrders[i]),
                       ),
                     ),

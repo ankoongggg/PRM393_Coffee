@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../routes/app_routes.dart';
 import '../../providers/report_provider.dart';
+import 'menu_management/inventory_screen.dart';
 
 class ManagerDashboard extends StatefulWidget {
   const ManagerDashboard({super.key});
@@ -45,7 +46,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             children: [
               // ── Fixed Header ──
               _buildHeader(),
-              
+
               // ── Main Content ──
               Expanded(
                 child: SingleChildScrollView(
@@ -57,15 +58,15 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                         // Summary Cards
                         _buildSummaryCards(reportProvider),
                         const SizedBox(height: 24),
-                        
+
                         // Revenue Chart
                         _buildRevenueSection(reportProvider),
                         const SizedBox(height: 24),
-                        
+
                         // Top Selling Items
                         _buildTopSellingItems(reportProvider),
                         const SizedBox(height: 24),
-                        
+
                         // Quick Actions
                         _buildQuickActions(),
                       ],
@@ -75,7 +76,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
               ),
             ],
           ),
-          
+
           // ── Bottom Navigation ──
           bottomNavigationBar: _buildBottomNavigation(),
         );
@@ -131,7 +132,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                 ),
               ],
             ),
-            
+
             // Notification and Profile
             Row(
               children: [
@@ -155,9 +156,9 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
 
   // ── SUMMARY CARDS ──
   Widget _buildSummaryCards(ReportProvider reportProvider) {
-    final formatPrice = (double amount) =>
+    String formatPrice(double amount) =>
         amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-    
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -253,7 +254,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             ],
           ),
           const SizedBox(height: 24),
-          
+
           // Chart
           SizedBox(
             height: 200,
@@ -344,6 +345,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
   // ── QUICK ACTIONS ──
   Widget _buildQuickActions() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quản lý nhanh',
@@ -364,19 +366,22 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.3,
           ),
-          itemCount: 4,
+          itemCount: 6, // ✅ Tăng lên 6 ô cho lưới cân đối (2 cột x 3 hàng)
           itemBuilder: (context, index) {
+            // ✅ Đổi cấu trúc List để chứa trực tiếp hàm onTap
             final items = [
-              ('Menu', Icons.restaurant_menu_rounded, _primary, AppRoutes.managerMenu),
-              ('Bàn', Icons.table_bar_rounded, _secondary, AppRoutes.managerTables),
-              ('Đơn hàng', Icons.receipt_long_rounded, _tertiary, AppRoutes.managerOrders),
-              ('Báo cáo', Icons.bar_chart_rounded, _primaryDark, AppRoutes.managerRevenue),
+              ('Menu', Icons.restaurant_menu_rounded, _primary, () => Navigator.pushNamed(context, AppRoutes.managerMenu)),
+              ('Kho', Icons.inventory_2_rounded, const Color(0xFFE65100), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryScreen()))),
+              ('Bàn', Icons.table_bar_rounded, _secondary, () => Navigator.pushNamed(context, AppRoutes.managerTables)),
+              ('Đơn hàng', Icons.receipt_long_rounded, _tertiary, () => Navigator.pushNamed(context, AppRoutes.managerOrders)),
+              ('Báo cáo', Icons.bar_chart_rounded, _primaryDark, () => Navigator.pushNamed(context, AppRoutes.managerRevenue)),
+              ('Tài khoản', Icons.manage_accounts_rounded, const Color(0xFF455A64), () => Navigator.pushNamed(context, AppRoutes.managerAccounts)),
             ];
-            
-            final (label, icon, color, route) = items[index];
-            
+
+            final (label, icon, color, onTapAction) = items[index];
+
             return GestureDetector(
-              onTap: () => Navigator.pushNamed(context, route),
+              onTap: onTapAction, // ✅ Gọi hàm chuyển trang tương ứng
               child: Container(
                 decoration: BoxDecoration(
                   color: _surfaceContainerLowest,
@@ -395,7 +400,7 @@ class _ManagerDashboardState extends State<ManagerDashboard> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: (color).withOpacity(0.15),
+                        color: color.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(icon, color: color, size: 20),
@@ -563,7 +568,7 @@ class _SummaryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             // Label
             Text(
               label,
@@ -575,7 +580,7 @@ class _SummaryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            
+
             // Value
             Text(
               value,
@@ -606,53 +611,58 @@ class _ChartBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // Space filler
-        Expanded(
-          flex: ((1.0 - height) * 100).toInt(),
-          child: const SizedBox.expand(),
-        ),
-        // Bar
-        Expanded(
-          flex: (height * 100).toInt(),
-          child: SizedBox(
-            width: 24,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: isActive
-                    ? const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0xFF4E342E), Color(0xFF361F1A)],
-                      )
-                    : null,
-                color: isActive ? null : const Color(0xFFf0e6e0),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                boxShadow: isActive
-                    ? [
-                        const BoxShadow(
-                          color: Color.fromRGBO(54, 31, 26, 0.15),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        )
-                      ]
-                    : [],
+    // ✅ 1. Bọc Expanded ở ngoài cùng để 7 cột chia đều không gian ngang
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Space filler
+          Expanded(
+            flex: ((1.0 - height) * 100).toInt(),
+            // ✅ 2. Xóa chữ ".expand()" đi, chỉ để SizedBox() trống
+            child: const SizedBox(),
+          ),
+          // Bar
+          Expanded(
+            flex: (height * 100).toInt(),
+            child: SizedBox(
+              width: 24,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: isActive
+                      ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF4E342E), Color(0xFF361F1A)],
+                  )
+                      : null,
+                  color: isActive ? null : const Color(0xFFf0e6e0),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                  boxShadow: isActive
+                      ? [
+                    const BoxShadow(
+                      color: Color.fromRGBO(54, 31, 26, 0.15),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    )
+                  ]
+                      : [],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          day,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: isActive ? const Color(0xFF361F1A) : const Color(0xFF504442),
+          const SizedBox(height: 8),
+          Text(
+            day,
+            textAlign: TextAlign.center, // ✅ 3. Căn giữa chữ để hiển thị đẹp hơn
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: isActive ? const Color(0xFF361F1A) : const Color(0xFF504442),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
