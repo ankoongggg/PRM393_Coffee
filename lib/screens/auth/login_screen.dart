@@ -406,7 +406,15 @@ class _LoginScreenState extends State<LoginScreen>
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration(label: 'Email', icon: Icons.email_outlined),
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập email' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập email';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'Email không đúng định dạng';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -424,7 +432,18 @@ class _LoginScreenState extends State<LoginScreen>
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
-                validator: (value) => value!.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập mật khẩu';
+                  }
+                  if (value.length < 6) {
+                    return 'Mật khẩu phải từ 6 ký tự trở lên';
+                  }
+                  if (!RegExp(r'(?=.*[A-Z])(?=.*\d)').hasMatch(value)) {
+                    return 'Mật khẩu phải chứa ít nhất 1 chữ hoa và 1 số';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 28),
 
