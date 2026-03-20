@@ -216,8 +216,8 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
           totalAmount: _totalPrice,
         );
         if (newId != null) {
-          // Bỏ qua Barista, chuyển bàn sang Phục vụ luôn
-          await tableProvider.setTableOccupied(widget.tableId, newId);
+          // Chuyển bàn sang Đang chờ
+          await tableProvider.setTableWaiting(widget.tableId, newId);
           isSuccess = true;
         }
       }
