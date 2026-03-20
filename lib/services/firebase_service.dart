@@ -427,4 +427,55 @@ class FirebaseService {
       recipe: data['recipe'] != null ? Map<String, dynamic>.from(data['recipe']) : null,
     );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // Users / Accounts
+  // ─────────────────────────────────────────────────────────────
+
+  /// Lấy danh sách tất cả users từ Firebase
+  Future<List<Map<String, dynamic>>> fetchAllUsers() async {
+    try {
+      // Thử lấy từ collection 'users' trước
+      var snapshot = await _firestore.collection('users').get();
+      
+      print('DEBUG: Fetched ${snapshot.docs.length} users from "users" collection');
+      
+      if (snapshot.docs.isEmpty) {
+        // Nếu không có, có thể tên collection khác, thử các tên khác
+        print('DEBUG: "users" collection is empty, trying other names...');
+      }
+      
+      return snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            print('DEBUG: User document: ${doc.id} - Data: $data');
+            return {
+              'id': doc.id,
+              'name': data['name'] ?? data['Name'] ?? '',
+              'email': data['email'] ?? data['Email'] ?? '',
+              'role': (data['role'] ?? data['Role'] ?? 'Waiter').toString().toLowerCase(),
+              'active': data['active'] ?? data['Active'] ?? data['status'] ?? true,
+            };
+          })
+          .toList();
+    } catch (e) {
+      print('ERROR fetching users: $e');
+      return [];
+    }
+  }
+
+  /// Lấy stream danh sách users real-time từ Firebase
+  Stream<List<Map<String, dynamic>>> getUsersStream() {
+    return _firestore.collection('users').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['name'] ?? '',
+                'email': doc['email'] ?? '',
+                'role': doc['role'] ?? 'Waiter',
+                'active': doc['active'] ?? true,
+              })
+          .toList();
+    });
+  }
 }

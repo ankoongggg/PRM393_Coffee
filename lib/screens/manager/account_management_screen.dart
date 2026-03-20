@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
+import '../../services/firebase_service.dart';
 import 'manager_navigation_bar.dart';
 
 class AccountManagementScreen extends StatefulWidget {
@@ -11,54 +12,97 @@ class AccountManagementScreen extends StatefulWidget {
 
 class _AccountManagementScreenState extends State<AccountManagementScreen> {
   String _selectedRole = 'Tất cả';
-  int _selectedNavIndex = 4; // ACCOUNT tab
+  int _selectedNavIndex = 5; // ACCOUNT tab (updated to 5 after adding STOCK)
   final _roles = ['Tất cả', 'Waiter', 'Barista'];
+  final FirebaseService _firebaseService = FirebaseService();
+  List<Map<String, dynamic>> _accounts = [];
+  bool _isLoading = true;
 
-  // ✅ Mock dữ liệu nhân viên (TODO: tích hợp với Firebase sau)
-  // Hiện AuthProvider chưa có method lấy list users, nên giữ mock trước
-  final List<Map<String, dynamic>> _accounts = [
-    {'id': 'USR001', 'name': 'Nguyễn An',   'email': 'an@coffee.vn',   'role': 'Waiter',   'active': true},
-    {'id': 'USR002', 'name': 'Trần Bình',   'email': 'binh@coffee.vn', 'role': 'Waiter',   'active': true},
-    {'id': 'USR003', 'name': 'Lê Chi',      'email': 'chi@coffee.vn',  'role': 'Barista',  'active': true},
-    {'id': 'USR004', 'name': 'Phạm Dũng',   'email': 'dung@coffee.vn', 'role': 'Barista',  'active': false},
-    {'id': 'USR005', 'name': 'Hoàng Em',    'email': 'em@coffee.vn',   'role': 'Waiter',   'active': true},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  /// Lấy danh sách users từ Firebase
+  Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
+    try {
+      final users = await _firebaseService.fetchAllUsers();
+      print('DEBUG: Loaded ${users.length} users in account_management_screen');
+      print('DEBUG: Users data: $users');
+      setState(() {
+        _accounts = users;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('ERROR in _loadUsers: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải tài khoản: $e')),
+        );
+      }
+    }
+  }
 
   List<Map<String, dynamic>> get _filtered => _selectedRole == 'Tất cả'
       ? _accounts
-      : _accounts.where((a) => a['role'] == _selectedRole).toList();
+      : _accounts.where((a) => (a['role'] ?? '').toString().toLowerCase() == _selectedRole.toLowerCase()).toList();
 
-  Color _roleColor(String role) => switch (role) {
-        'Waiter'  => const Color(0xFF1B6D24),
-        'Barista' => const Color(0xFF003A76),
-        _         => const Color(0xFF361F1A),
-      };
+  Color _roleColor(String role) {
+    final r = role.toLowerCase();
+    return switch (r) {
+      'waiter'  => const Color(0xFF1B6D24),
+      'barista' => const Color(0xFF003A76),
+      _         => const Color(0xFF361F1A),
+    };
+  }
 
-  IconData _roleIcon(String role) => switch (role) {
-        'Waiter'  => Icons.room_service,
-        'Barista' => Icons.local_cafe,
-        _         => Icons.person,
-      };
+  IconData _roleIcon(String role) {
+    final r = role.toLowerCase();
+    return switch (r) {
+      'waiter'  => Icons.room_service,
+      'barista' => Icons.local_cafe,
+      _         => Icons.person,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final activeCount  = _accounts.where((a) => a['active'] == true).length;
-    final waiterCount  = _accounts.where((a) => a['role'] == 'Waiter').length;
-    final baristaCount = _accounts.where((a) => a['role'] == 'Barista').length;
+    final waiterCount  = _accounts.where((a) => (a['role'] ?? '').toString().toLowerCase() == 'waiter').length;
+    final baristaCount = _accounts.where((a) => (a['role'] ?? '').toString().toLowerCase() == 'barista').length;
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFBF9F5),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFBF9F5),
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
+          title: const Text('Quản lý Tài khoản',
+              style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFBF9F5),
         elevation: 0,
+        automaticallyImplyLeading: false,
         shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text('Quản lý Tài khoản',
             style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
+            onPressed: _loadUsers,
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
             tooltip: 'Đăng xuất',
@@ -73,13 +117,15 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
         label: const Text('Thêm tài khoản', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => _showAddEditDialog(context),
       ),
-      body: Column(
-        children: [
-          _buildSummaryBar(activeCount, waiterCount, baristaCount),
-          _buildRoleFilter(),
-          Expanded(child: _buildList()),
-        ],
-      ),
+      body: _accounts.isEmpty
+          ? const Center(child: Text('Chưa có tài khoản nào'))
+          : Column(
+              children: [
+                _buildSummaryBar(activeCount, waiterCount, baristaCount),
+                _buildRoleFilter(),
+                Expanded(child: _buildList()),
+              ],
+            ),
       bottomNavigationBar: buildManagerBottomNavigation(
         context: context,
         selectedIndex: _selectedNavIndex,

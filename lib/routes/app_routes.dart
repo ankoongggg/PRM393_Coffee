@@ -17,6 +17,7 @@ abstract final class AppRoutes {
   static const String managerMenu      = '/manager/menu';
   static const String managerMenuAdd   = '/manager/menu/add';
   static const String managerMenuEdit  = '/manager/menu/edit';
+  static const String managerStock     = '/manager/stock';
   static const String managerTables    = '/manager/tables';
   static const String managerOrders    = '/manager/orders';
   static const String managerOrderDetail = '/manager/orders/detail';

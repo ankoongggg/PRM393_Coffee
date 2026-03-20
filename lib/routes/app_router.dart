@@ -8,9 +8,9 @@ import '../models/menu_item_model.dart';
 
 // Import Screens
 import '../screens/auth/login_screen.dart';
-import '../screens/manager/manager_dashboard.dart';
 import '../screens/manager/menu_management/menu_list_screen.dart';
 import '../screens/manager/menu_management/add_edit_menu_item_screen.dart';
+import '../screens/manager/menu_management/inventory_screen.dart';
 import '../screens/manager/table_management/table_management_screen.dart';
 import '../screens/manager/order_management/order_list_screen.dart';
 import '../screens/manager/order_management/order_detail_screen.dart';
@@ -32,7 +32,7 @@ class AppRouter {
 
       // ── Manager ──────────────────────────────────────────────
       case AppRoutes.managerDashboard:
-        return MaterialPageRoute(builder: (_) => const ManagerDashboard());
+        return MaterialPageRoute(builder: (_) => const ReportScreen());
 
       case AppRoutes.managerMenu:
         return MaterialPageRoute(builder: (_) => const MenuListScreen());
@@ -48,6 +48,8 @@ class AppRouter {
             menuItem: item,
           ),
         );
+      case AppRoutes.managerStock:
+        return MaterialPageRoute(builder: (_) => const InventoryScreen());
       case AppRoutes.managerTables:
         return MaterialPageRoute(builder: (_) => const TableManagementScreen());
       case AppRoutes.managerOrders:

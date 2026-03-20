@@ -12,7 +12,7 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
-  int _selectedNavIndex = 3; // STATS tab
+  int _selectedNavIndex = 4; // STATS tab (updated to 4 after adding STOCK)
 
   @override
   void initState() {
@@ -39,11 +39,8 @@ class _ReportScreenState extends State<ReportScreen> {
             appBar: AppBar(
               backgroundColor: const Color(0xFFFBF9F5),
               elevation: 0,
+              automaticallyImplyLeading: false,
               shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-                onPressed: () => Navigator.pop(context),
-              ),
               title: const Text('Báo cáo doanh thu', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             ),
             body: const Center(child: CircularProgressIndicator()),
@@ -59,11 +56,8 @@ class _ReportScreenState extends State<ReportScreen> {
           appBar: AppBar(
             backgroundColor: const Color(0xFFFBF9F5),
             elevation: 0,
+            automaticallyImplyLeading: false,
             shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-              onPressed: () => Navigator.pop(context),
-            ),
             title: const Text('Báo cáo doanh thu', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(

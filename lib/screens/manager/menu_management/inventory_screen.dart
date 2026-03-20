@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/ingredient_provider.dart';
 import '../../../models/ingredient_model.dart';
+import '../../../routes/app_routes.dart';
+import '../manager_navigation_bar.dart';
+import '../manager_navigation_bar.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -11,6 +14,8 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
+  int _selectedNavIndex = 3; // STOCK tab
+
   @override
   void initState() {
     super.initState();
@@ -74,23 +79,38 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kho Nguyên Liệu', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF6F4E37),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xFFFBF9F5),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
+        title: const Text('Quản Lý Kho Nguyên Liệu', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
+            onPressed: () => Provider.of<IngredientProvider>(context, listen: false).startIngredientListener(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+            tooltip: 'Đăng xuất',
+            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF6F4E37),
+        backgroundColor: const Color(0xFF361F1A),
+        elevation: 4,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Nhập Kho', style: TextStyle(color: Colors.white)),
+        label: const Text('Nhập Kho', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => _showAddEditDialog(),
       ),
+      backgroundColor: const Color(0xFFFBF9F5),
       body: Consumer<IngredientProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) return const Center(child: CircularProgressIndicator());
           if (provider.ingredients.isEmpty) return const Center(child: Text('Kho đang trống!'));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
             itemCount: provider.ingredients.length,
             itemBuilder: (ctx, i) {
               final item = provider.ingredients[i];
@@ -122,6 +142,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
             },
           );
         },
+      ),
+      bottomNavigationBar: buildManagerBottomNavigation(
+        context: context,
+        selectedIndex: _selectedNavIndex,
+        onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
       ),
     );
   }

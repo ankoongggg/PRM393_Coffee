@@ -57,20 +57,29 @@ Widget buildManagerBottomNavigation({
               },
             ),
             _NavItem(
-              icon: Icons.bar_chart_rounded,
-              label: 'STATS',
+              icon: Icons.inventory_2_rounded,
+              label: 'STOCK',
               isActive: selectedIndex == 3,
               onTap: () {
                 onIndexChanged(3);
+                Navigator.pushNamed(context, AppRoutes.managerStock);
+              },
+            ),
+            _NavItem(
+              icon: Icons.bar_chart_rounded,
+              label: 'STATS',
+              isActive: selectedIndex == 4,
+              onTap: () {
+                onIndexChanged(4);
                 Navigator.pushNamed(context, AppRoutes.managerRevenue);
               },
             ),
             _NavItem(
               icon: Icons.person_rounded,
               label: 'ACCOUNT',
-              isActive: selectedIndex == 4,
+              isActive: selectedIndex == 5,
               onTap: () {
-                onIndexChanged(4);
+                onIndexChanged(5);
                 Navigator.pushNamed(context, AppRoutes.managerAccounts);
               },
             ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../routes/app_routes.dart';
 import '../../../providers/menu_provider.dart';
 import '../../../models/menu_item_model.dart';
+import '../manager_navigation_bar.dart';
 
 class MenuListScreen extends StatefulWidget {
   const MenuListScreen({super.key});
@@ -14,6 +15,7 @@ class MenuListScreen extends StatefulWidget {
 
 class _MenuListScreenState extends State<MenuListScreen> {
   String _selectedCategory = 'Tất cả';
+  int _selectedNavIndex = 0; // MENU tab
 
   @override
   void initState() {
@@ -46,25 +48,31 @@ class _MenuListScreenState extends State<MenuListScreen> {
         return Scaffold(
           backgroundColor: const Color(0xFFFAF6F1),
           appBar: AppBar(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFFFBF9F5),
             elevation: 0,
-            // Xóa leading Navigator.pop vì trang này nằm trong Wrapper/IndexedStack
             automaticallyImplyLeading: false,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
             title: const Text(
               'Quản lý thực đơn',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: const Icon(Icons.refresh, color: Color(0xFF361F1A)),
                 onPressed: () => menuProvider.fetchMenuItems(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Color(0xFF361F1A)),
+                tooltip: 'Đăng xuất',
+                onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
               ),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: const Color(0xFF6F4E37),
+            backgroundColor: const Color(0xFF361F1A),
+            elevation: 4,
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Thêm món', style: TextStyle(color: Colors.white)),
+            label: const Text('Thêm món', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             onPressed: () => Navigator.pushNamed(context, AppRoutes.managerMenuAdd),
           ),
           body: Column(
@@ -76,6 +84,11 @@ class _MenuListScreenState extends State<MenuListScreen> {
               else
                 Expanded(child: _buildMenuList(filteredItems)),
             ],
+          ),
+          bottomNavigationBar: buildManagerBottomNavigation(
+            context: context,
+            selectedIndex: _selectedNavIndex,
+            onIndexChanged: (index) => setState(() => _selectedNavIndex = index),
           ),
         );
       },

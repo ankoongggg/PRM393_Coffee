@@ -99,12 +99,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
         if (orderProvider.isLoading && orderProvider.orders.isEmpty) {
           return Scaffold(
             appBar: AppBar(
-              backgroundColor: const Color(0xFF6F4E37),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              backgroundColor: const Color(0xFFFBF9F5),
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
+              title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             ),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -117,11 +116,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
           appBar: AppBar(
             backgroundColor: const Color(0xFFFBF9F5),
             elevation: 0,
+            automaticallyImplyLeading: false,
             shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-              onPressed: () => Navigator.pop(context),
-            ),
             title: const Text('Quản lý Đơn hàng', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(

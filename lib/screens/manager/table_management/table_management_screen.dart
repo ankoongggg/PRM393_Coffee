@@ -72,11 +72,8 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           appBar: AppBar(
             backgroundColor: const Color(0xFFFBF9F5),
             elevation: 0,
+            automaticallyImplyLeading: false,
             shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-              onPressed: () => Navigator.pop(context),
-            ),
             title: const Text('Quản lý Bàn', style: TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
