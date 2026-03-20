@@ -2,12 +2,12 @@ class MenuItemModel {
   final String id;
   final String name;
   final String category;
-  final String description; // ✅ Thêm lại
+  final String description;
   final double price;
-  final int quantity; // Số lượng tính toán từ kho
+  final int quantity;
   final Map<String, dynamic>? recipe;
-  final String imageURL; // ✅ Thống nhất dùng hoa 3 chữ cuối
-  final bool isAvailable; // ✅ Thêm lại
+  final String imageURL; // Biến chính
+  final bool isAvailable;
 
   MenuItemModel({
     required this.id,
@@ -21,7 +21,11 @@ class MenuItemModel {
     this.isAvailable = true,
   });
 
-  // ✅ Hàm copyWith rất quan trọng để cập nhật quantity động
+  // ✅ CÁCH FIX NHANH NHẤT:
+  // Thêm Getter này để hỗ trợ các màn hình cũ vẫn đang gọi .imageUrl
+  String get imageUrl => imageURL;
+
+  // ✅ Hàm copyWith (Giữ nguyên)
   MenuItemModel copyWith({
     String? id,
     String? name,
@@ -46,7 +50,7 @@ class MenuItemModel {
     );
   }
 
-  // ✅ Chuyển từ Map (Firebase) sang Model
+  // ✅ Chuyển từ Map sang Model (Đã tối ưu handle image)
   factory MenuItemModel.fromMap(Map<String, dynamic> map, String documentId) {
     return MenuItemModel(
       id: documentId,
@@ -54,15 +58,15 @@ class MenuItemModel {
       category: map['category'] ?? '',
       description: map['description'] ?? '',
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
-      // Lưu ý: quantity lấy từ Firebase chỉ là số khởi tạo, sau đó sẽ bị ghi đè bởi logic kho
       quantity: (map['quantity'] as num?)?.toInt() ?? 0,
       recipe: map['recipe'] != null ? Map<String, dynamic>.from(map['recipe']) : null,
-      imageURL: map['imageURL'] ?? map['imageUrl'] ?? '', // Handle cả 2 trường hợp
+      // Handle linh hoạt cả 3 kiểu đặt tên trên Firebase
+      imageURL: map['imageURL'] ?? map['imageUrl'] ?? map['image_url'] ?? '',
       isAvailable: map['isAvailable'] ?? true,
     );
   }
 
-  // ✅ Chuyển từ Model sang Map để lưu lên Firebase
+  // ✅ Chuyển từ Model sang Map (Giữ nguyên)
   Map<String, dynamic> toMap() {
     return {
       'name': name,
