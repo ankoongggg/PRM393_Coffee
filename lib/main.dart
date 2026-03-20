@@ -7,6 +7,7 @@ import 'providers/menu_provider.dart';
 import 'providers/table_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/report_provider.dart';
+import 'providers/ingredient_provider.dart';
 import 'routes/app_router.dart';
 import 'routes/app_routes.dart';
 import 'firebase_options.dart';
@@ -32,6 +33,7 @@ class PRM393CoffeeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TableProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
+        ChangeNotifierProvider(create: (_) => IngredientProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,

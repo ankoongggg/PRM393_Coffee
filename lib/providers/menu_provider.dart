@@ -109,10 +109,11 @@ class MenuProvider extends ChangeNotifier {
   // CRUD (Manager)
   // ─────────────────────────────────────────────────────────────
 
-  /// Thêm menu item mới (Manager)
+  /// Hàm thêm món mới (Manager)
   Future<void> addMenuItem(MenuItemModel item) async {
     try {
-      // Bạn cần đảm bảo đã thêm hàm addMenuItem vào FirebaseService
+      // ✅ Dùng _firebaseService thay vì _firestore
+      // item.toMap() giờ đã có chứa 'recipe', nên FirebaseService sẽ mang nó lên Firebase an toàn
       await _firebaseService.addMenuItem(item.toMap());
       print('✅ Thêm món ${item.name} thành công');
     } catch (e) {
@@ -125,7 +126,7 @@ class MenuProvider extends ChangeNotifier {
   /// Sửa menu item (Manager)
   Future<void> updateMenuItem(MenuItemModel item) async {
     try {
-      // Bạn cần đảm bảo đã thêm hàm updateMenuItem vào FirebaseService
+      // ✅ Truyền item.toMap() (đã có công thức) qua Service để update
       await _firebaseService.updateMenuItem(item.id, item.toMap());
       print('✅ Cập nhật món ${item.name} thành công');
     } catch (e) {
@@ -138,7 +139,6 @@ class MenuProvider extends ChangeNotifier {
   /// Xóa menu item (Manager)
   Future<void> deleteMenuItem(String id) async {
     try {
-      // Bạn cần đảm bảo đã thêm hàm deleteMenuItem vào FirebaseService
       await _firebaseService.deleteMenuItem(id);
       print('✅ Xóa món thành công');
     } catch (e) {

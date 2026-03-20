@@ -244,10 +244,14 @@ class FirebaseService {
     }
   }
 
+  // Trong firebase_service.dart
   Future<void> updateMenuItem(String id, Map<String, dynamic> data) async {
     try {
+      // ✅ Phải là 'menuItems' cho đồng bộ với Database của bạn
       await _firestore.collection('menuItems').doc(id).update(data);
+      print("✅ Đã cập nhật thành công vào collection menuItems");
     } catch (e) {
+      print("❌ Lỗi update Firebase: $e");
       rethrow;
     }
   }
@@ -414,10 +418,13 @@ class FirebaseService {
       name: data['name'] ?? '',
       description: data['description'] ?? '',
       price: priceValue,
-      // Backward compatibility: support cả `imageUrl` và `image_url`
-      imageUrl: (data['imageUrl'] ?? data['image_url'] ?? '').toString(),
+      // ✅ ĐỔI THÀNH imageURL (viết hoa) để khớp với Model mới
+      imageURL: (data['imageURL'] ?? data['imageUrl'] ?? data['image_url'] ?? '').toString(),
       category: data['category'] ?? '',
       isAvailable: data['isAvailable'] ?? true,
+      // ✅ Bổ sung quantity và recipe để tránh lỗi thiếu tham số nếu Model yêu cầu
+      quantity: (data['quantity'] as num?)?.toInt() ?? 0,
+      recipe: data['recipe'] != null ? Map<String, dynamic>.from(data['recipe']) : null,
     );
   }
 }

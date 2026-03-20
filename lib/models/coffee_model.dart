@@ -23,6 +23,10 @@ class CoffeeItem {
   final bool isPopular;
   final bool isFavorite;
 
+  // ✅ THÊM 2 BIẾN NÀY CHO TÍNH NĂNG KHO VÀ ẨN/HIỆN MÓN
+  final bool isAvailable;
+  final Map<String, dynamic> recipe;
+
   const CoffeeItem({
     required this.id,
     required this.name,
@@ -35,6 +39,8 @@ class CoffeeItem {
     this.sizes = const ['S', 'M', 'L'],
     this.isPopular = false,
     this.isFavorite = false,
+    this.isAvailable = true, // Mặc định là luôn có sẵn khi tạo mới
+    this.recipe = const {},  // Mặc định công thức rỗng
   });
 
   CoffeeItem copyWith({
@@ -49,6 +55,8 @@ class CoffeeItem {
     List<String>? sizes,
     bool? isPopular,
     bool? isFavorite,
+    bool? isAvailable,
+    Map<String, dynamic>? recipe,
   }) {
     return CoffeeItem(
       id: id ?? this.id,
@@ -62,6 +70,8 @@ class CoffeeItem {
       sizes: sizes ?? this.sizes,
       isPopular: isPopular ?? this.isPopular,
       isFavorite: isFavorite ?? this.isFavorite,
+      isAvailable: isAvailable ?? this.isAvailable,
+      recipe: recipe ?? this.recipe,
     );
   }
 }

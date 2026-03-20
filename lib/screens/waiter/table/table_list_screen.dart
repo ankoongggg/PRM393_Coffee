@@ -154,7 +154,7 @@ class _TableListScreenState extends State<TableListScreen> {
                             shrinkWrap: true,
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             itemCount: _notifications.length,
-                            separatorBuilder: (_, __) => Divider(height: 1, indent: 56, color: Colors.grey[100]),
+                            separatorBuilder: (_, _) => Divider(height: 1, indent: 56, color: Colors.grey[100]),
                             itemBuilder: (_, i) {
                               final n = _notifications[i];
                               final isSent = n.type == _WNotifType.orderSent;
