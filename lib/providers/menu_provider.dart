@@ -62,6 +62,13 @@ class MenuProvider extends ChangeNotifier {
       int finalQty = possibleCounts.isEmpty ? 0 : possibleCounts.reduce((a, b) => a < b ? a : b);
       if (finalQty < 0) finalQty = 0; // ✅ Đảm bảo không bao giờ hiện số âm
 
+      // ✅ Tự động đồng bộ số lượng tính toán mới nhất lên Firebase nếu có sự sai lệch
+      if (item.quantity != finalQty) {
+        _firebaseService.updateMenuItem(item.id, {'quantity': finalQty}).catchError((e) {
+          print('Lỗi khi đồng bộ quantity của ${item.name} lên Firebase: $e');
+        });
+      }
+
       return item.copyWith(quantity: finalQty);
     }).toList();
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../core/enums/user_role.dart';
+import '../services/firebase_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
@@ -10,31 +11,14 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   String? get errorMessage => _errorMessage;
 
-  // Danh sách tài khoản mặc định để validation
-  final Map<UserRole, Map<String, String>> _defaultAccounts = {
-    UserRole.manager: {'email': 'manager@gmail.com', 'password': 'Password123'},
-    UserRole.waiter: {'email': 'waiter@gmail.com', 'password': 'Password123'},
-    UserRole.barista: {'email': 'barista@gmail.com', 'password': 'Password123'},
-  };
-
-  // Hàm đăng nhập (Đang dùng dữ liệu giả lập để test UI trước)
+  // Hàm đăng nhập sử dụng dữ liệu từ Firestore
   Future<bool> login(String email, String password, UserRole selectedRole) async {
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // Giả lập thời gian chờ load mạng 1.5 giây
-      await Future.delayed(const Duration(milliseconds: 1500));
-
-      // Validate dữ liệu nhập
       if (email.isEmpty || password.isEmpty) {
         _errorMessage = 'Vui lòng nhập đầy đủ email và mật khẩu';
-        notifyListeners();
-        return false;
-      }
-
-      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        _errorMessage = 'Email không đúng định dạng';
         notifyListeners();
         return false;
       }
@@ -45,37 +29,65 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      if (!RegExp(r'(?=.*[A-Z])(?=.*\d)').hasMatch(password)) {
-        _errorMessage = 'Phải chứa ít nhất 1 chữ hoa và 1 số';
+      // Lấy danh sách users từ Firebase
+      final firebaseService = FirebaseService();
+      final users = await firebaseService.fetchAllUsers();
+
+      // Mặc định tạm thời nhận pass Password123 nếu không có firebase auth
+      // Tìm account hợp lệ có email và role khớp với lựa chọn
+      final userAccount = users.where((u) => u['email'].toString().toLowerCase() == email.toLowerCase()).firstOrNull;
+
+      if (userAccount == null) {
+        _errorMessage = 'Tài khoản không tồn tại trên hệ thống.';
         notifyListeners();
         return false;
       }
 
-      final accountSettings = _defaultAccounts[selectedRole];
+      // Kiểm tra trạng thái hoạt động (Active)
+      if (userAccount['active'] == false) {
+         _errorMessage = 'Tài khoản đã bị khóa.';
+         notifyListeners();
+         return false;
+      }
 
-      // Validate tài khoản và mật khẩu
-      if (accountSettings != null && 
-          email == accountSettings['email'] && 
-          password == accountSettings['password']) {
-        
-        // Cập nhật thông tin đăng nhập thành công
-        _currentUser = UserModel(
-          id: 'user_${selectedRole.name}',
-          name: '${selectedRole.name.toUpperCase()} User',
-          email: email,
-          role: selectedRole,
-        );
-
+      // Kiểm tra xem Role có khớp với Role người dùng chọn khi đăng nhập không
+      final dbRole = userAccount['role'].toString().toLowerCase();
+      if (dbRole != selectedRole.name.toLowerCase()) {
+        _errorMessage = 'Tài khoản này không có quyền truy cập với vai trò ${selectedRole.displayName}.';
         notifyListeners();
-        return true;
+        return false;
+      }
+      
+      // Kiểm tra mật khẩu (hỗ trợ đọc từ Firebase nếu user đã từng được cấp mật khẩu / đổi pass)
+      final storedPassword = userAccount['password'] as String?;
+      if (storedPassword != null && storedPassword.toString().isNotEmpty) {
+        if (password != storedPassword) {
+            _errorMessage = 'Mật khẩu không chính xác';
+            notifyListeners();
+            return false;
+        }
       } else {
-        _errorMessage = 'Email hoặc mật khẩu không chính xác cho vai trò này.';
-        notifyListeners();
-        return false;
+        // Fallback: Mặc định nếu trên Firebase chưa có field password, dùng chung pass test: Password123
+        if (password != 'Password123' && password != '123456Aa') {
+            _errorMessage = 'Mật khẩu không chính xác';
+            notifyListeners();
+            return false;
+        }
       }
+
+      // Cập nhật thông tin đăng nhập thành công
+      _currentUser = UserModel(
+        id: userAccount['id'],
+        name: userAccount['name'] ?? 'No Name',
+        email: email,
+        role: selectedRole,
+      );
+
+      notifyListeners();
+      return true;
 
     } catch (e) {
-      _errorMessage = 'Lỗi kết nối: ${e.toString()}';
+      _errorMessage = 'Lỗi hệ thống: ${e.toString()}';
       notifyListeners();
       return false;
     }

@@ -17,6 +17,7 @@ class OrderProvider extends ChangeNotifier {
 
   // ✅ Theo dõi các order đã trừ kho để tránh trừ trùng
   final Set<String> _deductedOrderIds = {};
+  final Set<String> _restoredOrderIds = {};
   bool _isFirstStreamLoad = true;
 
   List<OrderModel> get orders => List.unmodifiable(_orders);
@@ -28,34 +29,37 @@ class OrderProvider extends ChangeNotifier {
   }
 
   void startOrderListener() {
-    _orderSubscription?.cancel();
-    _setLoading(true);
-    _isFirstStreamLoad = true;
+    print('📦 Bắt đầu listener cập nhật Stream Đơn Hàng realtime...');
+    if (_orderSubscription == null) {
+      _setLoading(true);
+      _orderSubscription = _firebaseService.getOrdersStream().listen(
+            (newList) {
+          // ✅ Phát hiện order mới để trừ kho (ngay khi đặt) & order hủy để cộng lại
+          _detectAndProcessInventory(newList);
 
-    _orderSubscription = _firebaseService.getOrdersStream().listen(
-          (newList) {
-        // ✅ Phát hiện order vừa chuyển sang completed để trừ kho
-        _detectAndDeductCompleted(newList);
-
-        _orders = newList;
-        _error = null;
-        _setLoading(false);
-        notifyListeners();
-      },
-      onError: (e) {
-        _error = 'Lỗi stream order: $e';
-        _setLoading(false);
-        notifyListeners();
-      },
-    );
+          _orders = newList;
+          _error = null;
+          _setLoading(false);
+          notifyListeners();
+        },
+        onError: (e) {
+          _error = 'Lỗi stream order: $e';
+          _setLoading(false);
+          notifyListeners();
+        },
+      );
+    }
   }
 
-  /// ✅ So sánh danh sách cũ và mới, nếu order chuyển sang completed → trừ kho
-  void _detectAndDeductCompleted(List<OrderModel> newList) {
+  /// ✅ So sánh danh sách cũ và mới, xử lý ngay khi đăt đơn hoặc hủy đơn
+  void _detectAndProcessInventory(List<OrderModel> newList) {
     if (_isFirstStreamLoad) {
-      // Lần đầu load: đánh dấu các order đã completed là đã trừ (tránh trừ lại)
+      // Lần đầu load: theo dõi các đơn hiện tại để không xử lý lại
       for (final order in newList) {
-        if (order.status == OrderStatus.completed || order.status == OrderStatus.served) {
+        if (order.status == OrderStatus.cancelled) {
+          _restoredOrderIds.add(order.id);
+          _deductedOrderIds.add(order.id);
+        } else {
           _deductedOrderIds.add(order.id);
         }
       }
@@ -64,31 +68,23 @@ class OrderProvider extends ChangeNotifier {
     }
 
     for (final newOrder in newList) {
-      if (newOrder.status != OrderStatus.completed) continue;
-      if (_deductedOrderIds.contains(newOrder.id)) continue;
-
-      // Kiểm tra xem order này trước đó chưa completed
-      final oldOrder = _orders.where((o) => o.id == newOrder.id).firstOrNull;
-      final wasNotCompleted = oldOrder == null || oldOrder.status != OrderStatus.completed;
-
-      if (wasNotCompleted) {
-        _deductedOrderIds.add(newOrder.id);
-        _deductInventory(newOrder.id);
-        print('🏪 Auto-deduct kho cho order ${newOrder.id} (status → completed)');
+      if (newOrder.status == OrderStatus.cancelled) {
+        // Nếu chuyển sang hủy và chưa được cộng lại
+        if (!_restoredOrderIds.contains(newOrder.id) && _deductedOrderIds.contains(newOrder.id)) {
+          _restoredOrderIds.add(newOrder.id);
+          _processInventory(newOrder.id, isRestore: true);
+          print('🔄 Auto-restore kho cho order ${newOrder.id} (status → cancelled)');
+        }
+      } else {
+        // Nếu là đơn mới chưa được trừ kho
+        if (!_deductedOrderIds.contains(newOrder.id)) {
+          _deductedOrderIds.add(newOrder.id);
+          _processInventory(newOrder.id, isRestore: false);
+          print('🛒 Auto-deduct kho cho order ${newOrder.id} (đơn mới đặt)');
+        }
       }
     }
   }
-
-  // --- QUERIES ---
-  List<OrderModel> ordersByTable(String tableId) {
-    return _orders.where((o) => o.tableId == tableId).toList();
-  }
-
-  List<OrderModel> get pendingOrders =>
-      _orders.where((o) => o.status == OrderStatus.pending).toList();
-
-  List<OrderModel> get preparingOrders =>
-      _orders.where((o) => o.status == OrderStatus.preparing).toList();
 
   // --- CREATE & UPDATE ---
 
@@ -163,26 +159,37 @@ class OrderProvider extends ChangeNotifier {
       await _firestore.collection('orders').doc(orderId).update({
         'status': newStatus.toString().split('.').last,
       });
-      // ✅ Trừ kho được xử lý tự động trong stream listener (_detectAndDeductCompleted)
+      // ✅ Trừ/cộng kho được xử lý tự động trong stream listener (_detectAndProcessInventory)
       notifyListeners();
     } catch (e) {
       print('❌ Lỗi updateOrderStatus: $e');
     }
   }
 
-  Future<void> _deductInventory(String orderId) async {
+  Future<void> _processInventory(String orderId, {required bool isRestore}) async {
     try {
       final orderDoc = await _firestore.collection('orders').doc(orderId).get();
       if (!orderDoc.exists) return;
+      
+      final data = orderDoc.data();
+      final isDeducted = data?['isInventoryDeducted'] == true;
+      final isRestored = data?['isInventoryRestored'] == true;
 
-      final List items = orderDoc.data()?['items'] ?? [];
+      // Bảo vệ không thực thi kép
+      if (!isRestore && isDeducted) return;
+      if (isRestore && isRestored) return;
+      if (isRestore && !isDeducted) return; // Không thể cộng lại nếu chưa từng trừ
 
-      // ✅ Bước 1: Thu thập tổng lượng cần trừ cho từng nguyên liệu
-      final Map<String, double> deductions = {};
+      final List items = data?['items'] ?? [];
+
+      final Map<String, double> ingredientChanges = {};
+      final Map<String, int> menuItemQuantities = {};
 
       for (var itemData in items) {
         final String menuItemId = itemData['menuItemId'];
         final int quantityOrdered = (itemData['quantity'] as num).toInt();
+
+        menuItemQuantities[menuItemId] = (menuItemQuantities[menuItemId] ?? 0) + quantityOrdered;
 
         final menuSnap = await _firestore.collection('menuItems').doc(menuItemId).get();
         if (menuSnap.exists && menuSnap.data()!.containsKey('recipe')) {
@@ -191,35 +198,110 @@ class OrderProvider extends ChangeNotifier {
           for (var entry in recipe.entries) {
             final String ingredientId = entry.key;
             final double dosage = (entry.value as num).toDouble();
-            final double totalDeduct = dosage * quantityOrdered;
-            deductions[ingredientId] = (deductions[ingredientId] ?? 0) + totalDeduct;
+            final double totalChange = dosage * quantityOrdered;
+            ingredientChanges[ingredientId] = (ingredientChanges[ingredientId] ?? 0) + totalChange;
           }
         }
       }
 
-      // ✅ Bước 2: Dùng Transaction để đọc-ghi atomic, đảm bảo stock KHÔNG BAO GIỜ ÂM
-      for (var entry in deductions.entries) {
-        final ingRef = _firestore.collection('ingredients').doc(entry.key);
-
-        await _firestore.runTransaction((tx) async {
-          final ingSnap = await tx.get(ingRef);
-          if (!ingSnap.exists) return;
-
-          final currentStock = (ingSnap.data()?['stock'] ?? 0).toDouble();
-          // Trừ tối đa bằng stock hiện có, clamp về 0 nếu bị âm
-          final newStock = (currentStock - entry.value).clamp(0.0, double.infinity);
-          tx.update(ingRef, {'stock': newStock});
-        });
+      if (ingredientChanges.isEmpty && menuItemQuantities.isEmpty) {
+        if (isRestore) {
+          await _firestore.collection('orders').doc(orderId).update({'isInventoryRestored': true});
+        } else {
+          await _firestore.collection('orders').doc(orderId).update({'isInventoryDeducted': true});
+        }
+        return;
       }
 
-      // Sau khi trừ xong, thông báo cho các Provider khác load lại dữ liệu
+      // ✅ Dùng 1 Transaction ĐƠN NHẤT để kiểm tra & cập nhật đồng loạt
+      await _firestore.runTransaction((tx) async {
+        final orderRef = _firestore.collection('orders').doc(orderId);
+        final txOrderSnap = await tx.get(orderRef);
+        
+        // Kiểm tra lại khóa bảo vệ bên trong Transaction
+        if (!txOrderSnap.exists) return;
+        final txData = txOrderSnap.data();
+        if (!isRestore && txData?['isInventoryDeducted'] == true) return;
+        if (isRestore && txData?['isInventoryRestored'] == true) return;
+
+        // Đọc snapshot nguyên liệu
+        final Map<String, DocumentReference> ingRefs = {};
+        final Map<String, DocumentSnapshot> ingSnaps = {};
+        for (var entry in ingredientChanges.entries) {
+          final ref = _firestore.collection('ingredients').doc(entry.key);
+          ingRefs[entry.key] = ref;
+          ingSnaps[entry.key] = await tx.get(ref);
+        }
+
+        // Đọc snapshot món ăn
+        final Map<String, DocumentReference> menuRefs = {};
+        final Map<String, DocumentSnapshot> menuSnaps = {};
+        for (var entry in menuItemQuantities.entries) {
+          final ref = _firestore.collection('menuItems').doc(entry.key);
+          menuRefs[entry.key] = ref;
+          menuSnaps[entry.key] = await tx.get(ref);
+        }
+
+        // Ghi dữ liệu nguyên liệu
+        for (var entry in ingredientChanges.entries) {
+          final snap = ingSnaps[entry.key];
+          if (snap != null && snap.exists) {
+            final currentStock = (snap.data() as Map<String, dynamic>)['stock'] ?? 0.0;
+            double currentStockNum = currentStock is num ? currentStock.toDouble() : 0.0;
+            double newStock;
+            if (isRestore) {
+              newStock = currentStockNum + entry.value;
+            } else {
+              newStock = (currentStockNum - entry.value).clamp(0.0, double.infinity);
+            }
+            tx.update(ingRefs[entry.key]!, {'stock': newStock});
+          }
+        }
+
+        // Ghi dữ liệu món ăn (số lượng)
+        for (var entry in menuItemQuantities.entries) {
+          final snap = menuSnaps[entry.key];
+          if (snap != null && snap.exists) {
+            final currentQty = (snap.data() as Map<String, dynamic>)['quantity'] ?? 0;
+            int currentQtyNum = currentQty is num ? currentQty.toInt() : 0;
+            int newQty;
+            if (isRestore) {
+              newQty = currentQtyNum + entry.value;
+            } else {
+              newQty = (currentQtyNum - entry.value).clamp(0, 999999);
+            }
+            tx.update(menuRefs[entry.key]!, {'quantity': newQty});
+          }
+        }
+
+        // Đánh dấu order đã được xử lý kho
+        if (isRestore) {
+          tx.update(orderRef, {'isInventoryRestored': true});
+        } else {
+          tx.update(orderRef, {'isInventoryDeducted': true});
+        }
+      });
+
       notifyListeners();
-      print('✅ Đã thực thi trừ kho bằng Transaction thành công!');
+      print(isRestore 
+          ? '✅ Đã RESTORE kho & quantity món ăn bằng Transaction!' 
+          : '✅ Đã DEDUCT kho & quantity món ăn bằng Transaction!');
 
     } catch (e) {
-      print('❌ Lỗi hệ thống trừ kho: $e');
+      print('❌ Lỗi hệ thống cập nhật kho: $e');
     }
   }
+
+  // --- QUERIES ---
+  List<OrderModel> ordersByTable(String tableId) {
+    return _orders.where((o) => o.tableId == tableId).toList();
+  }
+
+  List<OrderModel> get pendingOrders =>
+      _orders.where((o) => o.status == OrderStatus.pending).toList();
+
+  List<OrderModel> get preparingOrders =>
+      _orders.where((o) => o.status == OrderStatus.preparing).toList();
 
   Future<void> updateOrderBatchStatus({
     required String orderId,

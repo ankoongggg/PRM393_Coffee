@@ -109,32 +109,85 @@ class _InventoryScreenState extends State<InventoryScreen> {
           if (provider.ingredients.isEmpty) return const Center(child: Text('Kho đang trống!'));
 
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             itemCount: provider.ingredients.length,
             itemBuilder: (ctx, i) {
               final item = provider.ingredients[i];
               // Báo đỏ nếu tồn kho bằng 0
               final isOutOfStock = item.stock <= 0;
 
-              return Card(
-                elevation: 2,
+              return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isOutOfStock ? Colors.red[100] : Colors.blue[100],
-                    child: Icon(Icons.kitchen, color: isOutOfStock ? Colors.red : Colors.blue[800]),
-                  ),
-                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: Text(
-                    isOutOfStock ? 'HẾT HÀNG' : 'Tồn kho: ${item.stock} ${item.unit}',
-                    style: TextStyle(
-                      color: isOutOfStock ? Colors.red : Colors.green[700],
-                      fontWeight: FontWeight.w500,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _showAddEditDialog(item),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              color: isOutOfStock ? Colors.red.withValues(alpha: 0.1) : const Color(0xFF003A76).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.inventory_2_rounded, 
+                              color: isOutOfStock ? Colors.red : const Color(0xFF003A76),
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name, 
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF361F1A)),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isOutOfStock ? Icons.error_outline : Icons.check_circle_outline, 
+                                      size: 16, 
+                                      color: isOutOfStock ? Colors.red : const Color(0xFF27AE60),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isOutOfStock ? 'Hết hàng' : 'Tồn kho: ${item.stock} ${item.unit}',
+                                      style: TextStyle(
+                                        color: isOutOfStock ? Colors.red : const Color(0xFF504442),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFBF9F5),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE4E2DE)),
+                            ),
+                            child: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF9E7B5A)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.grey),
-                    onPressed: () => _showAddEditDialog(item),
                   ),
                 ),
               );

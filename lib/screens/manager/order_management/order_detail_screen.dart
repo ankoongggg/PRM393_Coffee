@@ -1,169 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../../providers/order_provider.dart';
+import '../../../models/order_model.dart';
+import '../../../core/enums/order_status.dart';
 
-class OrderDetailScreen extends StatefulWidget {
+class OrderDetailScreen extends StatelessWidget {
   final String orderId;
   const OrderDetailScreen({super.key, required this.orderId});
 
-  @override
-  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
-}
+  String _formatPrice(double amount) =>
+      amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
 
-class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  // TODO: replace with OrderProvider.getOrderById(orderId)
-  late Map<String, dynamic> _order;
-
-  final _statusFlow = ['pending', 'preparing', 'completed'];
-
-  @override
-  void initState() {
-    super.initState();
-    // Mock data
-    _order = {
-      'id': widget.orderId,
-      'table': 4,
-      'waiter': 'Trần Bình',
-      'time': '09:02',
-      'status': 'preparing',
-      'items': [
-        {'name': 'Cà phê sữa đá', 'qty': 2, 'price': 35000},
-        {'name': 'Bánh croissant', 'qty': 1, 'price': 25000},
-        {'name': 'Matcha latte', 'qty': 1, 'price': 45000},
-      ],
-    };
-  }
-
-  int get _total => (_order['items'] as List)
-      .fold(0, (s, i) => s + (i['qty'] as int) * (i['price'] as int));
-
-  String _formatPrice(int amount) =>
-      amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
-
-  Color _statusColor(String s) => switch (s) {
-    'pending' => const Color(0xFFE67E22),
-    'preparing' => const Color(0xFF2980B9),
-    'completed' => const Color(0xFF27AE60),
-    'cancelled' => Colors.grey,
-    _ => Colors.grey,
+  Color _statusColor(OrderStatus s) => switch (s) {
+    OrderStatus.pending => const Color(0xFFE67E22),
+    OrderStatus.preparing => const Color(0xFF2980B9),
+    OrderStatus.completed => const Color(0xFF27AE60),
+    OrderStatus.served => const Color(0xFF27AE60),
+    OrderStatus.cancelled => Colors.grey,
   };
 
-  String _statusLabel(String s) => switch (s) {
-    'pending' => 'Chờ pha',
-    'preparing' => 'Đang pha',
-    'completed' => 'Hoàn thành',
-    'cancelled' => 'Đã hủy',
-    _ => s,
+  String _statusLabel(OrderStatus s) => switch (s) {
+    OrderStatus.pending => 'Chờ pha',
+    OrderStatus.preparing => 'Đang pha',
+    OrderStatus.completed => 'Hoàn thành',
+    OrderStatus.served => 'Hoàn thành',
+    OrderStatus.cancelled => 'Đã hủy',
   };
-
-  void _advanceStatus() {
-    final currentIndex = _statusFlow.indexOf(_order['status']);
-    if (currentIndex < _statusFlow.length - 1) {
-      setState(() => _order['status'] = _statusFlow[currentIndex + 1]);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Trạng thái: ${_statusLabel(_order['status'])}'),
-          backgroundColor: _statusColor(_order['status']),
-        ),
-      );
-    }
-  }
-
-  void _cancelOrder() {
-    final status = _order['status'] as String;
-    if (status == 'completed') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('❌ Đơn đã hoàn thành nên không thể hủy'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Hủy đơn hàng?'),
-        content: const Text('Bạn có chắc muốn hủy đơn này không?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Không')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              setState(() => _order['status'] = 'cancelled');
-              Navigator.pop(context);
-            },
-            child: const Text('Hủy đơn', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final status = _order['status'] as String;
-    final canAdvance = _statusFlow.contains(status) && status != 'served';
-    final isCancelled = status == 'cancelled';
-    final isCompleted = status == 'completed';
+    return Consumer<OrderProvider>(
+      builder: (context, provider, child) {
+        final order = provider.orders.where((o) => o.id == orderId).firstOrNull;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF9F5),
-        elevation: 0,
-        shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Đơn ${_order['id']}', style: const TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
-        actions: [
-          if (!isCancelled && !isCompleted && status != 'served')
-            IconButton(
-              icon: const Icon(Icons.cancel_outlined, color: Color(0xFF361F1A)),
-              tooltip: 'Hủy đơn',
-              onPressed: _cancelOrder,
+        if (order == null) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFFFBF9F5),
+              elevation: 0,
+              leading: const BackButton(color: Color(0xFF361F1A)),
+              title: const Text('Không tìm thấy đơn hàng', style: TextStyle(color: Color(0xFF361F1A))),
             ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoCard(),
-            const SizedBox(height: 16),
-            _buildStatusTimeline(),
-            const SizedBox(height: 16),
-            _buildItemsCard(),
-            const SizedBox(height: 16),
-            _buildTotalCard(),
-            const SizedBox(height: 24),
-            if (canAdvance && !isCancelled)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF361F1A),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                  label: Text(
-                    'Chuyển sang: ${_statusLabel(_statusFlow[_statusFlow.indexOf(status) + 1])}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
-                  ),
-                  onPressed: _advanceStatus,
-                ),
-              ),
-          ],
-        ),
-      ),
+            body: const Center(child: Text('Đơn hàng không tồn tại hoặc đã bị xóa')),
+          );
+        }
+
+        final isCancelled = order.status == OrderStatus.cancelled;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFFBF9F5),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFFBF9F5),
+            elevation: 0,
+            shape: const Border(bottom: BorderSide(color: Color(0xFFF0EBE6))),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF361F1A)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            // Rút gọn ID trên AppBar cho dễ nhìn
+            title: Text('Đơn ${order.id.substring(0, 6).toUpperCase()}', style: const TextStyle(color: Color(0xFF361F1A), fontWeight: FontWeight.w800)),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoCard(order),
+                const SizedBox(height: 16),
+                _buildStatusTimeline(order),
+                const SizedBox(height: 16),
+                _buildItemsCard(order),
+                const SizedBox(height: 16),
+                _buildTotalCard(order),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildInfoCard(OrderModel order) {
+    final timeStr = DateFormat('HH:mm').format(order.createdAt);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -182,19 +102,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _statusColor(_order['status']).withOpacity(0.1),
+                  color: _statusColor(order.status).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(_statusLabel(_order['status']), style: TextStyle(color: _statusColor(_order['status']), fontWeight: FontWeight.w800, fontSize: 12)),
+                child: Text(_statusLabel(order.status), style: TextStyle(color: _statusColor(order.status), fontWeight: FontWeight.w800, fontSize: 12)),
               ),
             ],
           ),
           const Divider(height: 24, color: Color(0xFFF0EBE6)),
-          _infoRow(Icons.table_bar, 'Bàn số', '${_order['table']}'),
+          _infoRow(Icons.table_bar, 'Bàn số', '${order.tableNumber}'),
           const SizedBox(height: 10),
-          _infoRow(Icons.person_outline, 'Nhân viên', _order['waiter']),
+          _infoRow(Icons.person_outline, 'Nhân viên', order.waiterName),
           const SizedBox(height: 10),
-          _infoRow(Icons.access_time, 'Giờ tạo', _order['time']),
+          _infoRow(Icons.access_time, 'Giờ tạo', timeStr),
         ],
       ),
     );
@@ -209,13 +129,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     ],
   );
 
-  Widget _buildStatusTimeline() {
+  Widget _buildStatusTimeline(OrderModel order) {
     final steps = [
-      {'key': 'pending', 'label': 'Chờ pha', 'icon': Icons.hourglass_empty},
-      {'key': 'preparing', 'label': 'Đang pha', 'icon': Icons.local_cafe},
-      {'key': 'completed', 'label': 'Xong', 'icon': Icons.check_circle_outline},
+      {'key': OrderStatus.pending, 'label': 'Chờ pha', 'icon': Icons.hourglass_empty},
+      {'key': OrderStatus.preparing, 'label': 'Đang pha', 'icon': Icons.local_cafe},
+      {'key': OrderStatus.completed, 'label': 'Xong', 'icon': Icons.check_circle_outline},
     ];
-    final currentIndex = _statusFlow.indexOf(_order['status']);
+
+    int currentIndex = steps.indexWhere((step) => step['key'] == order.status);
+    if (order.status == OrderStatus.served) currentIndex = 2; // Gộp chung "Hoàn thành" 
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -232,8 +154,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           const SizedBox(height: 20),
           Row(
             children: List.generate(steps.length, (i) {
-              final done = i <= currentIndex && !(_order['status'] == 'cancelled');
-              final isCurrent = i == currentIndex && !(_order['status'] == 'cancelled');
+              final isCancelled = order.status == OrderStatus.cancelled;
+              final isDone = !isCancelled && currentIndex >= 0 && i <= currentIndex;
+              final isCurrent = !isCancelled && currentIndex >= 0 && i == currentIndex;
+
+              // Màu cho trạng thái hủy thì hiện mờ
+              final circleColor = isDone ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE);
+              final iconColor = isDone ? Colors.white : const Color(0xFF504442);
+              final textColor = isDone ? const Color(0xFF361F1A) : const Color(0xFF504442);
+              
               return Expanded(
                 child: Row(
                   children: [
@@ -245,13 +174,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: done ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
-                              border: isCurrent ? Border.all(color: const Color(0xFF361F1A).withOpacity(0.5), width: 2.5) : null,
+                              color: isCancelled && isCurrent ? Colors.red : circleColor,
+                              border: isCurrent && !isCancelled ? Border.all(color: const Color(0xFF361F1A).withOpacity(0.5), width: 2.5) : null,
                             ),
-                            child: Icon(steps[i]['icon'] as IconData, size: 18, color: done ? Colors.white : const Color(0xFF504442)),
+                            child: Icon(steps[i]['icon'] as IconData, size: 18, color: isCancelled && isCurrent ? Colors.white : iconColor),
                           ),
                           const SizedBox(height: 6),
-                          Text(steps[i]['label'] as String, style: TextStyle(fontSize: 10, color: done ? const Color(0xFF361F1A) : const Color(0xFF504442), fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500), textAlign: TextAlign.center),
+                          Text(steps[i]['label'] as String, style: TextStyle(fontSize: 10, color: textColor, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
@@ -261,7 +190,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         child: Container(
                           height: 2,
                           width: 24,
-                          color: i < currentIndex ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
+                          color: (i < currentIndex && !isCancelled) ? const Color(0xFF361F1A) : const Color(0xFFE4E2DE),
                         ),
                       ),
                   ],
@@ -274,8 +203,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildItemsCard() {
-    final items = _order['items'] as List;
+  Widget _buildItemsCard(OrderModel order) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -289,7 +217,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         children: [
           const Text('Danh sách món', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF361F1A))),
           const Divider(height: 24, color: Color(0xFFF0EBE6)),
-          ...items.map((item) => Padding(
+          ...order.items.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
@@ -304,10 +232,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   child: const Icon(Icons.local_cafe, size: 14, color: Color(0xFF504442)),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Text(item['name'], style: const TextStyle(fontSize: 14, color: Color(0xFF361F1A), fontWeight: FontWeight.w500))),
-                Text('x${item['qty']}', style: const TextStyle(fontSize: 13, color: Color(0xFF504442), fontWeight: FontWeight.w700)),
+                Expanded(child: Text(item.menuItemName, style: const TextStyle(fontSize: 14, color: Color(0xFF361F1A), fontWeight: FontWeight.w500))),
+                Text('x${item.quantity}', style: const TextStyle(fontSize: 13, color: Color(0xFF504442), fontWeight: FontWeight.w700)),
                 const SizedBox(width: 12),
-                Text('${_formatPrice((item['qty'] as int) * (item['price'] as int))}đ',
+                Text('${_formatPrice(item.subtotal)}đ',
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF361F1A))),
               ],
             ),
@@ -317,7 +245,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildTotalCard() {
+  Widget _buildTotalCard(OrderModel order) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -329,7 +257,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text('Tổng cộng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-          Text('${_formatPrice(_total)}đ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 22)),
+          Text('${_formatPrice(order.totalAmount)}đ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 22)),
         ],
       ),
     );

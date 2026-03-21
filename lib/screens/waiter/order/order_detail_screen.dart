@@ -191,7 +191,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     orElse: () => widget.order,
                   );
                   
-                  final cannotCancel = currentOrder.status == OrderStatus.completed ||
+                  final cannotCancel = currentOrder.status == OrderStatus.preparing || 
+                      currentOrder.status == OrderStatus.completed ||
                       currentOrder.status == OrderStatus.served ||
                       currentOrder.status == OrderStatus.cancelled;
 
@@ -394,12 +395,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Nút Hủy
+              // Nít Hủy
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[50],
-                    foregroundColor: Colors.red,
+                    backgroundColor: cannotCancel ? Colors.grey[200] : Colors.red[50],
+                    foregroundColor: cannotCancel ? Colors.grey : Colors.red,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

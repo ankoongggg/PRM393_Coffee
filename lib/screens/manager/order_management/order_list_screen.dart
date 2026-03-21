@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/order_provider.dart';
 import '../../../routes/app_routes.dart';
+import '../../../services/firebase_service.dart';
 import '../../../widgets/date_range_filter_field.dart';
 import '../manager_navigation_bar.dart';
 
@@ -14,22 +15,38 @@ class OrderListScreen extends StatefulWidget {
 
 class _OrderListScreenState extends State<OrderListScreen> {
   String _selectedFilter = 'all';
+  String _selectedWaiter = 'all'; // Waiter filter
   int _selectedNavIndex = 2; // ORDERS tab
   final _filters = ['all', 'pending', 'preparing', 'completed', 'cancelled'];
   final _filterLabels = {
     'all': 'Tất cả', 'pending': 'Chờ pha', 'preparing': 'Đang pha',
-    'completed': 'Xong', 'cancelled': 'Đã hủy',
+    'completed': 'Hoàn thành', 'cancelled': 'Đã hủy',
   };
   DateTime? _fromDate;
   DateTime? _toDate;
+  List<Map<String, dynamic>> _waitersList = [];
 
   @override
   void initState() {
     super.initState();
+    _loadWaiters();
     // ✅ Sử dụng Listener thay vì fetch lẻ để nhận data Real-time
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<OrderProvider>(context, listen: false).startOrderListener();
     });
+  }
+
+  Future<void> _loadWaiters() async {
+    try {
+      final users = await FirebaseService().fetchAllUsers();
+      if (mounted) {
+        setState(() {
+          _waitersList = users.where((u) => (u['role'] ?? '').toString().toLowerCase() == 'waiter').toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading waiters: $e');
+    }
   }
 
   String _formatDate(DateTime d) =>
@@ -56,8 +73,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
     Iterable<dynamic> result = provider.orders;
 
     if (_selectedFilter != 'all') {
-      result = result.where((o) =>
-          o.status.toString().split('.').last == _selectedFilter);
+      result = result.where((o) {
+        final st = o.status.toString().split('.').last;
+        // Gộp chung đơn "đã phục vụ" vào nhóm "hoàn thành"
+        if (_selectedFilter == 'completed' && st == 'served') return true;
+        return st == _selectedFilter;
+      });
     }
 
     if (_fromDate != null && _toDate != null) {
@@ -69,6 +90,34 @@ class _OrderListScreenState extends State<OrderListScreen> {
       });
     }
 
+    if (_selectedWaiter != 'all') {
+      // Tìm Object của Waiter đang được select
+      final selectedObj = _waitersList.where((w) => w['id'] == _selectedWaiter).firstOrNull;
+      final selectedName = selectedObj != null ? selectedObj['name'] : '';
+
+      result = result.where((o) {
+        if (o.waiterId == null) return false;
+        
+        final wid = o.waiterId as String;
+        final wname = o.waiterName as String;
+
+        // 1. Trùng khớp chính xác với ID mới trên Firebase
+        if (wid == _selectedWaiter) return true;
+
+        // 2. Vá lỗi tương thích dữ liệu cũ (Mock Data)
+        // Hệ thống cũ từng dùng 'user_123' (Nguyễn Văn A) và 'user_waiter' (WAITER User)
+        // Theo yêu cầu của Manager, toàn bộ đơn cũ này thuộc về tài khoản hiện tại mang tên "Hoàng Minh"
+        if (selectedName == 'Hoàng Minh') {
+          if (wid == 'user_123' || wid == 'user_waiter' || 
+              wname == 'Nguyễn Văn A' || wname == 'WAITER User' || wname == 'Waiter') {
+            return true;
+          }
+        }
+
+        return false;
+      });
+    }
+
     return result.toList();
   }
 
@@ -76,6 +125,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     'pending' => const Color(0xFFE67E22),
     'preparing' => const Color(0xFF2980B9),
     'completed' => const Color(0xFF27AE60),
+    'served' => const Color(0xFF27AE60), // Gộp chung màu với hoàn thành
     'cancelled' => Colors.grey,
     _ => Colors.grey,
   };
@@ -84,6 +134,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     'pending' => 'Chờ pha',
     'preparing' => 'Đang pha',
     'completed' => 'Hoàn thành',
+    'served' => 'Hoàn thành', // Gộp chung nhãn với hoàn thành
     'cancelled' => 'Đã hủy',
     _ => s,
   };
@@ -144,17 +195,47 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   border: Border.all(color: Colors.transparent),
                   boxShadow: const [BoxShadow(color: Color.fromRGBO(54, 31, 26, 0.04), blurRadius: 20, offset: Offset(0, 4))],
                 ),
-                child: DateRangeFilterField(
-                  fromDate: _fromDate,
-                  toDate: _toDate,
-                  onTap: _pickRangeCompact,
-                  onClear: (_fromDate != null || _toDate != null)
-                      ? () => setState(() {
-                            _fromDate = null;
-                            _toDate = null;
-                          })
-                      : null,
-                  placeholder: 'Chọn khoảng ngày',
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: DateRangeFilterField(
+                        fromDate: _fromDate,
+                        toDate: _toDate,
+                        onTap: _pickRangeCompact,
+                        onClear: (_fromDate != null || _toDate != null)
+                            ? () => setState(() {
+                                  _fromDate = null;
+                                  _toDate = null;
+                                })
+                            : null,
+                        placeholder: 'Chọn khoảng ngày',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(height: 30, width: 1, color: const Color(0xFFE4E2DE)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 4,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedWaiter,
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF9E7B5A), size: 20),
+                          style: const TextStyle(color: Color(0xFF504442), fontSize: 13, fontWeight: FontWeight.w600),
+                          items: [
+                            const DropdownMenuItem(value: 'all', child: Text('Tất cả Waiter', overflow: TextOverflow.ellipsis)),
+                            ..._waitersList.map((w) => DropdownMenuItem(value: w['id'] as String, child: Text(w['name'] as String, overflow: TextOverflow.ellipsis))),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedWaiter = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               _buildFilterBar(),

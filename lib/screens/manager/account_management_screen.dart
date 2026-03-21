@@ -322,7 +322,11 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
     final nameCtrl   = TextEditingController(text: isEdit ? account['name']  as String : '');
     final emailCtrl  = TextEditingController(text: isEdit ? account['email'] as String : '');
     final passCtrl   = TextEditingController();
-    String selectedRole = isEdit ? account['role'] as String : 'Waiter';
+    bool obscurePass = true;
+    
+    // Đảm bảo chữ cái đầu viết hoa
+    String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+    String selectedRole = isEdit ? _capitalize(account['role'] as String) : 'Waiter';
 
     showDialog(
       context: context,
@@ -351,23 +355,29 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: passCtrl,
-                  obscureText: true,
-                  decoration: const InputDecoration(
+                  obscureText: obscurePass,
+                  decoration: InputDecoration(
                     labelText: 'Mật khẩu',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscurePass ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setDlg(() => obscurePass = !obscurePass),
+                    ),
                   ),
                 ),
               ],
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+              TextFormField(
                 initialValue: selectedRole,
+                readOnly: true,
+                style: const TextStyle(color: Color(0xFF9E7B5A), fontWeight: FontWeight.bold),
                 decoration: const InputDecoration(
-                  labelText: 'Vai trò',
-                  prefixIcon: Icon(Icons.badge_outlined),
+                  labelText: 'Vai trò (Cố định)',
+                  prefixIcon: Icon(Icons.badge_outlined, color: Color(0xFF9E7B5A)),
+                  filled: true,
+                  fillColor: Color(0xFFF0EBE6),
+                  border: OutlineInputBorder(borderSide: BorderSide.none),
                 ),
-                items: ['Waiter', 'Barista'].map((r) =>
-                    DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (v) => setDlg(() => selectedRole = v!),
               ),
             ]),
           ),
@@ -378,22 +388,70 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6F4E37)),
-              onPressed: () {
-                // TODO: AuthProvider.addAccount / updateAccount
-                if (!isEdit) {
-                  setState(() => _accounts.add({
-                    'id':     'USR${_accounts.length + 1}',
-                    'name':   nameCtrl.text,
-                    'email':  emailCtrl.text,
-                    'role':   selectedRole,
-                    'active': true,
-                  }));
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty || emailCtrl.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Vui lòng nhập đầy đủ họ tên và email'),
+                    backgroundColor: Colors.red,
+                  ));
+                  return;
                 }
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(isEdit ? 'Đã cập nhật tài khoản!' : 'Đã thêm tài khoản mới!'),
-                  backgroundColor: const Color(0xFF6F4E37),
-                ));
+
+                if (!isEdit) {
+                  final pass = passCtrl.text;
+                  if (pass.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Mật khẩu phải từ 6 ký tự trở lên'),
+                      backgroundColor: Colors.red,
+                    ));
+                    return;
+                  }
+                  if (!RegExp(r'(?=.*[A-Z])(?=.*\d)').hasMatch(pass)) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Mật khẩu phải chứa ít nhất 1 chữ hoa và 1 số'),
+                      backgroundColor: Colors.red,
+                    ));
+                    return;
+                  }
+                }
+
+                try {
+                  if (isEdit) {
+                    await _firebaseService.updateUser(account['id'], {
+                      'Name': nameCtrl.text, 
+                      'name': nameCtrl.text,
+                      'Email': emailCtrl.text, 
+                      'email': emailCtrl.text,
+                      // Không được phép cập nhật chức vụ Role nữa
+                    });
+                  } else {
+                    await _firebaseService.addUser({
+                      'Name': nameCtrl.text,
+                      'name': nameCtrl.text,
+                      'Email': emailCtrl.text,
+                      'email': emailCtrl.text,
+                      'Role': 'waiter',
+                      'role': 'waiter',
+                      'password': passCtrl.text,
+                      'active': true,
+                    });
+                  }
+                  
+                  if (context.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(isEdit ? 'Đã cập nhật tài khoản!' : 'Đã thêm tài khoản mới!'),
+                      backgroundColor: const Color(0xFF6F4E37),
+                    ));
+                    _loadUsers(); // load again
+                  }
+                } catch (e) {
+                  print('Error updating user: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Có lỗi xảy ra, vui lòng thử lại!'),
+                    backgroundColor: Colors.red,
+                  ));
+                }
               },
               child: Text(isEdit ? 'Lưu' : 'Thêm',
                   style: const TextStyle(color: Colors.white)),
@@ -406,33 +464,66 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
 
   void _showResetPasswordDialog(BuildContext context, Map<String, dynamic> acc) {
     final passCtrl = TextEditingController();
+    bool obscurePass = true;
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Đặt lại mật khẩu\n${acc['name']}'),
-        content: TextField(
-          controller: passCtrl,
-          obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'Mật khẩu mới',
-            prefixIcon: Icon(Icons.lock_outline),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setDlg) => AlertDialog(
+          title: Text('Đặt lại mật khẩu\n${acc['name']}'),
+          content: TextField(
+            controller: passCtrl,
+            obscureText: obscurePass,
+            decoration: InputDecoration(
+              labelText: 'Mật khẩu mới',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(obscurePass ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setDlg(() => obscurePass = !obscurePass),
+              ),
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE67E22)),
+              onPressed: () async {
+                final pass = passCtrl.text;
+                if (pass.length < 6) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Mật khẩu phải từ 6 ký tự trở lên'),
+                    backgroundColor: Colors.red,
+                  ));
+                  return;
+                }
+                if (!RegExp(r'(?=.*[A-Z])(?=.*\d)').hasMatch(pass)) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Mật khẩu phải chứa ít nhất 1 chữ hoa và 1 số'),
+                    backgroundColor: Colors.red,
+                  ));
+                  return;
+                }
+                
+                try {
+                  // Cập nhật mật khẩu trên Firebase
+                  await _firebaseService.updateUser(acc['id'], {
+                    'password': pass,
+                  });
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Đã đặt lại mật khẩu thành công!'),
+                      backgroundColor: Color(0xFFE67E22),
+                    ));
+                    _loadUsers();
+                  }
+                } catch (e) {
+                  print('Error reset password: $e');
+                }
+              },
+              child: const Text('Xác nhận', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE67E22)),
-            onPressed: () {
-              // TODO: AuthProvider.resetPassword
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Đã đặt lại mật khẩu!'),
-                backgroundColor: Color(0xFFE67E22),
-              ));
-            },
-            child: const Text('Xác nhận', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }

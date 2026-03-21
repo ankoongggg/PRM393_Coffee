@@ -478,4 +478,24 @@ class FirebaseService {
           .toList();
     });
   }
+
+  /// Thêm user mới
+  Future<void> addUser(Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('users').add(data);
+    } catch (e) {
+      print('ERROR adding user: $e');
+      rethrow;
+    }
+  }
+
+  /// Cập nhật thông tin user
+  Future<void> updateUser(String id, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('users').doc(id).update(data);
+    } catch (e) {
+      print('ERROR updating user: $e');
+      rethrow;
+    }
+  }
 }
