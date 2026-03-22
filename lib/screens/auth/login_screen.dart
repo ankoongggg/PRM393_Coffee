@@ -492,7 +492,7 @@ class _LoginScreenState extends State<LoginScreen>
       child: Column(
         children: [
           Text(
-            '© 2024 PRM393 Coffee Management System',
+            '© 2026 PRM393 Coffee Management System Group 3',
             style: TextStyle(
               fontSize: 11,
               color: _coffeeMedium.withValues(alpha: 0.5),
