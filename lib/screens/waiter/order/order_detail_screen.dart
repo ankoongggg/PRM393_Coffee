@@ -32,6 +32,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   bool _isProcessing = false;
 
+  /// Các lần đặt (batch) đang được chọn để hủy — key giống map itemsByBatch (vd. initial, add_...)
+  final Set<String> _selectedBatchIds = {};
+
+  bool _canCancelBatch(OrderStatus batchStatus) =>
+      batchStatus == OrderStatus.pending;
+
   double get _totalPrice =>
       widget.order.items.fold(0, (sum, item) => sum + item.subtotal);
 
@@ -175,6 +181,90 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  Future<void> _onCancelSelectedBatches() async {
+    if (_isProcessing || _selectedBatchIds.isEmpty) return;
+
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    OrderModel currentOrder;
+    try {
+      currentOrder = orderProvider.orders.firstWhere((o) => o.id == widget.order.id);
+    } catch (_) {
+      currentOrder = widget.order;
+    }
+
+    if (currentOrder.status == OrderStatus.completed ||
+        currentOrder.status == OrderStatus.served ||
+        currentOrder.status == OrderStatus.cancelled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể hủy lần đặt với trạng thái đơn hiện tại'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Hủy các lần đã chọn?', style: TextStyle(color: _coffee900, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Bạn sắp hủy ${_selectedBatchIds.length} lần đặt. Nguyên liệu sẽ được hoàn lại kho.',
+          style: const TextStyle(color: _coffee600),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Không', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[50],
+              foregroundColor: Colors.red,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hủy các lần này', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      final tableProvider = Provider.of<TableProvider>(context, listen: false);
+      final hasRemaining = await orderProvider.cancelOrderBatches(
+        orderId: widget.order.id,
+        batchIds: _selectedBatchIds.toList(),
+      );
+
+      if (!mounted) return;
+      setState(() => _selectedBatchIds.clear());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(hasRemaining ? '✅ Đã hủy các lần đã chọn' : '✅ Đã hủy toàn bộ đơn'),
+          backgroundColor: hasRemaining ? _coffee600 : Colors.red,
+        ),
+      );
+
+      if (!hasRemaining) {
+        await tableProvider.setTableAvailable(widget.tableId);
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,8 +281,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     orElse: () => widget.order,
                   );
                   
-                  final cannotCancel = currentOrder.status == OrderStatus.preparing || 
+                  final cannotCancelWhole = currentOrder.status == OrderStatus.preparing ||
                       currentOrder.status == OrderStatus.completed ||
+                      currentOrder.status == OrderStatus.served ||
+                      currentOrder.status == OrderStatus.cancelled;
+
+                  final orderClosed = currentOrder.status == OrderStatus.completed ||
                       currentOrder.status == OrderStatus.served ||
                       currentOrder.status == OrderStatus.cancelled;
 
@@ -247,19 +341,56 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 children: [
                                   // Order header
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Mã Bill #${widget.order.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _coffee900)),
-                                          Text('Lần ${(i + 1).toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                                        ],
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(12)),
-                                        child: Text(statusLabel.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 0.5)),
+                                      if (!orderClosed && _canCancelBatch(batchStatus))
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 4),
+                                          child: SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: Checkbox(
+                                              value: _selectedBatchIds.contains(batchId),
+                                              onChanged: _isProcessing
+                                                  ? null
+                                                  : (v) {
+                                                      setState(() {
+                                                        if (v == true) {
+                                                          _selectedBatchIds.add(batchId);
+                                                        } else {
+                                                          _selectedBatchIds.remove(batchId);
+                                                        }
+                                                      });
+                                                    },
+                                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              visualDensity: VisualDensity.compact,
+                                              activeColor: const Color(0xFF6F4E37),
+                                            ),
+                                          ),
+                                        )
+                                      else if (!orderClosed)
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 8, top: 2),
+                                          child: Icon(Icons.lock_outline, size: 18, color: Colors.grey[400]),
+                                        ),
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Mã Bill #${widget.order.id.substring(0, 6).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _coffee900)),
+                                                Text('Lần ${(i + 1).toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                              ],
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(12)),
+                                              child: Text(statusLabel.toUpperCase(), style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 0.5)),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -307,7 +438,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       ),
                       // Bottom bar
-                      _buildBottomActions([currentOrder], cannotCancel),
+                      _buildBottomActions(
+                        tableOrders: [currentOrder],
+                        cannotCancelWhole: cannotCancelWhole,
+                        orderClosed: orderClosed,
+                        canCancelSelected: _selectedBatchIds.isNotEmpty,
+                      ),
                     ],
                   );
                 },
@@ -347,9 +483,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   // ── BOTTOM ACTIONS ──
-  Widget _buildBottomActions(List<OrderModel> tableOrders, bool cannotCancel) {
+  Widget _buildBottomActions({
+    required List<OrderModel> tableOrders,
+    required bool cannotCancelWhole,
+    required bool orderClosed,
+    required bool canCancelSelected,
+  }) {
     if (tableOrders.isEmpty) return const SizedBox.shrink();
-    
+
     final totalItems = tableOrders.fold<int>(0, (sum, o) => sum + o.items.length);
     final totalPrice = tableOrders.fold<double>(0, (sum, o) => sum + o.items.fold<double>(0, (s, item) => s + item.subtotal));
     final isAllCompleted = tableOrders.every((o) => o.status == OrderStatus.completed);
@@ -377,10 +518,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               Text('${_formatPrice(totalPrice)}đ', style: const TextStyle(color: _coffee900, fontWeight: FontWeight.bold, fontSize: 22)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
-              // Nút Đặt thêm
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -395,39 +535,51 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Nít Hủy
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: cannotCancel ? Colors.grey[200] : Colors.red[50],
-                    foregroundColor: cannotCancel ? Colors.grey : Colors.red,
+                    backgroundColor: (!orderClosed && canCancelSelected) ? Colors.red[50] : Colors.grey[200],
+                    foregroundColor: (!orderClosed && canCancelSelected) ? Colors.red : Colors.grey,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  onPressed: (_isProcessing || cannotCancel) ? null : _onCancelOrder,
-                  child: const Text('Hủy đơn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Nút Phục vụ
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isAllCompleted ? const Color(0xFF059669) : Colors.grey[300],
-                    foregroundColor: Colors.white,
-                    elevation: isAllCompleted ? 2 : 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  icon: const Icon(Icons.check_circle_outline, size: 18),
-                  label: const Text('Đã phục vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  onPressed: (isAllCompleted && !_isProcessing) ? _onServed : null,
+                  onPressed: (_isProcessing || orderClosed || !canCancelSelected) ? null : _onCancelSelectedBatches,
+                  child: const Text('Hủy đã chọn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isAllCompleted ? const Color(0xFF059669) : Colors.grey[300],
+                foregroundColor: Colors.white,
+                elevation: isAllCompleted ? 2 : 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              icon: const Icon(Icons.check_circle_outline, size: 18),
+              label: const Text('Đã phục vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              onPressed: (isAllCompleted && !_isProcessing) ? _onServed : null,
+            ),
+          ),
+          if (!orderClosed) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: (_isProcessing || cannotCancelWhole) ? null : _onCancelOrder,
+              child: Text(
+                'Hủy toàn bộ đơn',
+                style: TextStyle(
+                  color: cannotCancelWhole ? Colors.grey : Colors.red[700],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

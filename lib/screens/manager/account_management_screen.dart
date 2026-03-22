@@ -224,7 +224,6 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
 
   Widget _buildAccountCard(Map<String, dynamic> acc) {
     final roleColor = _roleColor(acc['role'] as String);
-    final isActive  = acc['active'] as bool;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
@@ -278,35 +277,20 @@ class _AccountManagementScreenState extends State<AccountManagementScreen> {
                 ],
               ),
             ),
-            // Status toggle + menu
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Switch(
-                  value: isActive,
-                  activeThumbColor: const Color(0xFF27AE60),
-                  activeTrackColor: const Color(0xFF27AE60).withValues(alpha: 0.3),
-                  onChanged: (v) {
-                    // TODO: AuthProvider.toggleAccount
-                    setState(() => acc['active'] = v);
-                  },
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF9E7B5A)),
-                  onSelected: (val) {
-                    if (val == 'edit')   _showAddEditDialog(context, account: acc);
-                    if (val == 'reset')  _showResetPasswordDialog(context, acc);
-                    if (val == 'delete') _confirmDelete(context, acc);
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'edit',
-                        child: Row(children: [Icon(Icons.edit, size: 16), SizedBox(width: 8), Text('Chỉnh sửa')])),
-                    const PopupMenuItem(value: 'reset',
-                        child: Row(children: [Icon(Icons.lock_reset, size: 16, color: Color(0xFFE67E22)), SizedBox(width: 8), Text('Đặt lại mật khẩu', style: TextStyle(color: Color(0xFFE67E22)))])),
-                    const PopupMenuItem(value: 'delete',
-                        child: Row(children: [Icon(Icons.delete, size: 16, color: Colors.red), SizedBox(width: 8), Text('Xóa tài khoản', style: TextStyle(color: Colors.red))])),
-                  ],
-                ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF9E7B5A)),
+              onSelected: (val) {
+                if (val == 'edit')   _showAddEditDialog(context, account: acc);
+                if (val == 'reset')  _showResetPasswordDialog(context, acc);
+                if (val == 'delete') _confirmDelete(context, acc);
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'edit',
+                    child: Row(children: [Icon(Icons.edit, size: 16), SizedBox(width: 8), Text('Chỉnh sửa')])),
+                const PopupMenuItem(value: 'reset',
+                    child: Row(children: [Icon(Icons.lock_reset, size: 16, color: Color(0xFFE67E22)), SizedBox(width: 8), Text('Đặt lại mật khẩu', style: TextStyle(color: Color(0xFFE67E22)))])),
+                const PopupMenuItem(value: 'delete',
+                    child: Row(children: [Icon(Icons.delete, size: 16, color: Colors.red), SizedBox(width: 8), Text('Xóa tài khoản', style: TextStyle(color: Colors.red))])),
               ],
             ),
           ],

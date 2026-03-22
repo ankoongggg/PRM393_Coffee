@@ -51,23 +51,71 @@ class _InventoryScreenState extends State<InventoryScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              final unit = unitCtrl.text.trim();
+              final stock = double.tryParse(stockCtrl.text) ?? 0;
+              if (name.isEmpty || unit.isEmpty) return;
+
               final newIng = IngredientModel(
                 id: ingredient?.id ?? '',
-                name: nameCtrl.text.trim(),
-                unit: unitCtrl.text.trim(),
-                stock: double.tryParse(stockCtrl.text) ?? 0,
+                name: name,
+                unit: unit,
+                stock: stock,
               );
 
               final provider = Provider.of<IngredientProvider>(context, listen: false);
-              if (isEdit) {
-                provider.updateIngredient(newIng.id, newIng.toMap());
-              } else {
-                provider.addIngredient(newIng);
+              try {
+                if (isEdit) {
+                  await provider.updateIngredient(newIng.id, newIng.toMap());
+                } else {
+                  await provider.addIngredient(newIng);
+                }
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+                  );
+                }
               }
-              Navigator.pop(ctx);
             },
             child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteIngredient(BuildContext context, IngredientModel item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Xóa "${item.name}"?'),
+        content: const Text('Bạn có chắc muốn xóa nguyên liệu này khỏi kho?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              try {
+                await Provider.of<IngredientProvider>(context, listen: false).deleteIngredient(item.id);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đã xóa nguyên liệu'), backgroundColor: Color(0xFF6F4E37)),
+                  );
+                }
+              } catch (e) {
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -175,6 +223,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                               ],
                             ),
+                          ),
+                          IconButton(
+                            onPressed: () => _confirmDeleteIngredient(ctx, item),
+                            icon: const Icon(Icons.delete_outline, size: 22, color: Colors.red),
+                            tooltip: 'Xóa nguyên liệu',
                           ),
                           Container(
                             padding: const EdgeInsets.all(10),

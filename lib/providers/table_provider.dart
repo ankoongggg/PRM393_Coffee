@@ -15,8 +15,11 @@ class TableProvider extends ChangeNotifier {
   String? _error;
   StreamSubscription? _tableSubscription;
 
-  // Getters
-  List<TableModel> get tables => List.unmodifiable(_tables);
+  // Getters - sắp xếp theo số bàn 1, 2, 3...
+  List<TableModel> get tables {
+    final sorted = List<TableModel>.from(_tables)..sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
+    return List.unmodifiable(sorted);
+  }
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -87,8 +90,17 @@ class TableProvider extends ChangeNotifier {
   // TABLE MANAGEMENT (Manager)
   // ─────────────────────────────────────────────────────────────
 
+  /// Kiểm tra số bàn đã tồn tại chưa (khi thêm: tất cả, khi sửa: loại trừ tableId)
+  bool hasDuplicateTableNumber(int tableNumber, {String? excludeTableId}) {
+    return _tables.any((t) =>
+        t.tableNumber == tableNumber && (excludeTableId == null || t.id != excludeTableId));
+  }
+
   /// Thêm bàn mới (Manager)
   Future<void> addTable(int tableNumber, int capacity) async {
+    if (hasDuplicateTableNumber(tableNumber)) {
+      throw Exception('Số bàn $tableNumber đã tồn tại');
+    }
     try {
       await _firebaseService.addTable({
         'tableNumber': tableNumber,
@@ -106,6 +118,9 @@ class TableProvider extends ChangeNotifier {
 
   /// Sửa bàn (Manager)
   Future<void> updateTable(String tableId, int tableNumber, int capacity) async {
+    if (hasDuplicateTableNumber(tableNumber, excludeTableId: tableId)) {
+      throw Exception('Số bàn $tableNumber đã tồn tại');
+    }
     try {
       await _firebaseService.updateTable(tableId, {
         'tableNumber': tableNumber,

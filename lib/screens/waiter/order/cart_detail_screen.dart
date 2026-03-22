@@ -194,7 +194,7 @@ class _CartDetailScreenState extends State<CartDetailScreen> {
       if (existingOrder != null &&
           existingOrder.status != OrderStatus.completed &&
           existingOrder.status != OrderStatus.cancelled) {
-        // Cộng dồn
+        // Cộng dồn (trừ kho do OrderProvider xử lý qua stream khi Firestore cập nhật items)
         isSuccess = await orderProvider.addItemsToExistingOrder(
           orderId: existingOrder.id,
           newItems: orderItems,

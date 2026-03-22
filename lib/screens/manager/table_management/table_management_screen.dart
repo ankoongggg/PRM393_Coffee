@@ -278,9 +278,13 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                   } else {
                     await provider.addTable(number, capacity);
                   }
-                  Navigator.pop(dialogContext);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
                 } catch (e) {
-                  // Lỗi sẽ được xử lý bởi rethrow trong provider
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+                    );
+                  }
                 }
               }
             },

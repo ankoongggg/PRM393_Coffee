@@ -12,6 +12,23 @@ class IngredientProvider extends ChangeNotifier {
   List<IngredientModel> get ingredients => _ingredients;
   bool get isLoading => _isLoading;
 
+  /// Kiểm tra tên nguyên liệu đã tồn tại chưa (khi sửa: loại trừ id)
+  bool hasDuplicateName(String name, {String? excludeId}) {
+    final lower = name.trim().toLowerCase();
+    return _ingredients.any((i) =>
+        i.name.trim().toLowerCase() == lower && (excludeId == null || i.id != excludeId));
+  }
+
+  /// Xóa nguyên liệu
+  Future<void> deleteIngredient(String id) async {
+    try {
+      await _firestore.collection('ingredients').doc(id).delete();
+    } catch (e) {
+      print('❌ Lỗi xóa nguyên liệu: $e');
+      rethrow;
+    }
+  }
+
   // ✅ Tự động khởi động listener khi Provider được tạo (giống MenuProvider, OrderProvider)
   IngredientProvider() {
     startIngredientListener();
@@ -40,19 +57,28 @@ class IngredientProvider extends ChangeNotifier {
 
   // Thêm nguyên liệu mới
   Future<void> addIngredient(IngredientModel ingredient) async {
+    if (hasDuplicateName(ingredient.name)) {
+      throw Exception('Tên nguyên liệu "${ingredient.name}" đã tồn tại');
+    }
     try {
       await _firestore.collection('ingredients').add(ingredient.toMap());
     } catch (e) {
       print('❌ Lỗi thêm nguyên liệu: $e');
+      rethrow;
     }
   }
 
   // Cập nhật nguyên liệu (Sửa số lượng thủ công)
   Future<void> updateIngredient(String id, Map<String, dynamic> data) async {
+    final name = data['name']?.toString().trim();
+    if (name != null && hasDuplicateName(name, excludeId: id)) {
+      throw Exception('Tên nguyên liệu "$name" đã tồn tại');
+    }
     try {
       await _firestore.collection('ingredients').doc(id).update(data);
     } catch (e) {
       print('❌ Lỗi cập nhật: $e');
+      rethrow;
     }
   }
 
